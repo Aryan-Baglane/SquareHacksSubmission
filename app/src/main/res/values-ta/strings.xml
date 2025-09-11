@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="assess_title">நீர் மதிப்பீடு</string>
+    <string name="name_label">பெயர்</string>
+    <string name="current_location">தற்போதைய இடம்</string>
+    <string name="num_dwellers">வசிப்பவர்களின் எண்ணிக்கை</string>
+    <string name="roof_area">மேல் மாடி பரப்பு (சதுர மீ.)</string>
+    <string name="open_space">வெற்றிட பரப்பு (சதுர மீ.)</string>
+    <string name="roof_type">மேல் மாடி வகை</string>
+    <string name="start_assessment">மதிப்பீட்டை தொடங்கு</string>
+    <string name="assessing">மதிப்பீடு நடைபெறுகிறது...</string>
+    <string name="assessment_results">மதிப்பீட்டு அறிக்கை</string>
+    <string name="feasibility_score">சாத்தியக்கூறு மதிப்பெண்</string>
+    <string name="location_information">இடத் தகவல்</string>
+    <string name="rainwater_harvesting">மழைநீர் சேகரிப்பு</string>
+    <string name="artificial_recharge">செயற்கை மீள் நிரப்பு</string>
+    <string name="cost_benefit">செலவு-லாபம்</string>
+    <string name="annual_rainfall">ஆண்டிற் மழைப்பொழிவு</string>
+    <string name="soil_type">மண் வகை</string>
+    <string name="soil_permeability">மண் ஊடுருவல்</string>
+    <string name="principal_aquifer">முக்கிய அக்விஃபர்</string>
+    <string name="groundwater_depth">நிலத்தடிநீர் ஆழம்</string>
+    <string name="annual_runoff_potential">ஆண்டிற் ஓட்டச் சாத்தியம்</string>
+    <string name="recommended_tank_size">பரிந்துரைக்கப்பட்ட தொட்டி திறன்</string>
+    <string name="feasible">சாத்தியமான</string>
+    <string name="recommended_structure">பரிந்துரைக்கப்பட்ட அமைப்பு</string>
+    <string name="initial_investment">ஆரம்ப முதலீடு</string>
+    <string name="annual_maintenance">ஆண்டிற் பராமரிப்பு</string>
+    <string name="annual_water_savings">ஆண்டிற் நீர் சேமிப்பு</string>
+    <string name="annual_monetary_savings">ஆண்டிற் நிதி சேமிப்பு</string>
+    <string name="payback_period">பேபேக் காலம்</string>
+    <string name="save_report">அறிக்கையைச் சேமிக்கவும்</string>
+    <string name="saving">சேமிக்கப்படுகிறது...</string>
+    <string name="save_property_title">சொத்தாக சேமிக்கவா?</string>
+    <string name="save_property_msg">இந்த மதிப்பீட்டை சொத்தாக சேமிக்க விரும்புகிறீர்களா?</string>
+    <string name="save">சேமிக்கவும்</string>
+    <string name="not_now">இப்பொழுது இல்லை</string>
+    <string name="language">மொழி</string>
+    <string name="choose_language">மொழியைத் தேர்ந்தெடுக்கவும்</string>
+
+    <string name="roof_type_concrete">கான்கிரீட்</string>
+    <string name="roof_type_tile">டைல்</string>
+    <string name="roof_type_metal">உலோகம்</string>
+    <string name="roof_type_asbestos">அஸ்பெஸ்டாஸ்</string>
+    <string name="roof_type_thatch">கூரை</string>
+    <string name="learn_hub_title">கற்றுக்கொண்டு வளரவும்</string>
+    <string name="article_aquifers_title">நீர்நிலைகளின் வகைகள்</string>
+    <string name="article_aquifers_desc">நிலத்தடி நீர் சேமிப்பு அடுக்குகளை புரிந்துகொள்ளுங்கள்.</string>
+    <string name="article_diy_title">DIY வடிகட்டி வழிகாட்டி</string>
+    <string name="article_diy_desc">உங்கள் RWH அமைப்புக்கு எளிய வடிகட்டி கட்ட கற்றுக்கொள்ளுங்கள்.</string>
+    <string name="article_stories_title">உங்கள் மாநிலத்திலிருந்து வெற்றி கதைகள்</string>
+    <string name="article_stories_desc">உள்ளூர் பாதுகாப்பு வீரர்களிடமிருந்து ஈர்க்கவும்.</string>
+    <string name="article_policies_title">அரசு மானியங்கள் மற்றும் கொள்கைகள்</string>
+    <string name="article_policies_desc">அரசு உங்களுக்கு எவ்வாறு உதவ முடியும் என்பதை அறிந்துகொள்ளுங்கள்.</string>
+    <string name="article_maintenance_title">உங்கள் RWH அமைப்பை பராமரித்தல்</string>
+    <string name="article_maintenance_desc">உங்கள் அமைப்பை திறம்பட இயக்குவதற்கான குறிப்புகள்.</string>
+    <string name="article_health_title">நீர் தரத்தின் ஆரோக்கியத்தில் தாக்கம்</string>
+    <string name="article_health_desc">சுத்தமான நீர் மற்றும் நல்வாழ்வு இடையேயான இணைப்பை ஆராயுங்கள்.</string>
+    <string name="article_community_title">சமூக நீர் திட்டத்தை தொடங்குதல்</string>
+    <string name="article_community_desc">கூட்டுறவு முயற்சிகளுக்கான படிப்படியான வழிகாட்டி.</string>
+    <string name="article_technology_title">ஸ்மார்ட் RWH: நீர் மேலாண்மைக்கு IoT பயன்பாடு</string>
+    <string name="article_technology_desc">தொழில்நுட்பம் உங்கள் அமைப்பை எவ்வாறு மேம்படுத்த முடியும் என்பதை கண்டறியுங்கள்.</string>
+    <string name="article_gardening_title">நீர்-ஞான தோட்டக்கலை நுட்பங்கள்</string>
+    <string name="article_gardening_desc">நீரை சேமித்துக்கொண்டு உங்கள் தோட்டத்தை பசுமையாக வைத்திருக்கும் வழிகள்.</string>
+    <string name="article_budgeting_title">உங்கள் RWH அமைப்புக்கான பட்ஜெட் தயாரித்தல்</string>
+    <string name="article_budgeting_desc">நிறுவல் நிதி திட்டமிடல் மற்றும் மேலாண்மைக்கான குறிப்புகள்.</string>
+    <string name="category_aquifers">நீர்நிலைகள்</string>
+    <string name="category_diy">DIY</string>
+    <string name="category_stories">கதைகள்</string>
+    <string name="category_policies">கொள்கைகள்</string>
+    <string name="category_maintenance">பராமரிப்பு</string>
+    <string name="category_health">ஆரோக்கியம்</string>
+    <string name="category_community">சமூகம்</string>
+    <string name="category_technology">தொழில்நுட்பம்</string>
+    <string name="category_gardening">தோட்டக்கலை</string>
+    <string name="category_budgeting">பட்ஜெட்</string>
+    <string name="article_expand_details">இங்கே கட்டுரையின் முழு விவரங்கள் வரும். நீங்கள் இதை உண்மையான பெறப்பட்ட/நீண்ட உள்ளடக்கத்துடன் மாற்றலாம். மென்மையாக விரிவாக்குவது இந்த பிரிவை காட்டுகிறது.</string>
+
+        <string name="detecting_location">இடம் கண்டறியப்படுகிறது...</string>
+        <string name="location_not_detected">இடத்தை கண்டறிய முடியவில்லை</string>
+        <string name="location_permission_denied">இட அனுமதி மறுக்கப்பட்டது</string>
+        <string name="location_detected">இடம் கண்டறியப்பட்டது</string>
+
+</resources>
+

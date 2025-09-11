@@ -2,5 +2,7 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/Indra-Backend-Server" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/ml model" vcs="Git" />
   </component>
 </project>

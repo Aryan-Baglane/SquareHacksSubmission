@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="assess_title">जल मूल्यांकन</string>
+    <string name="name_label">नाम</string>
+    <string name="current_location">वर्तमान स्थान</string>
+    <string name="num_dwellers">निवासियों की संख्या</string>
+    <string name="roof_area">छत का क्षेत्र (वर्ग मी.)</string>
+    <string name="open_space">खुली जगह (वर्ग मी.)</string>
+    <string name="roof_type">छत का प्रकार</string>
+    <string name="start_assessment">मूल्यांकन शुरू करें</string>
+    <string name="assessing">मूल्यांकन हो रहा है...</string>
+    <string name="assessment_results">मूल्यांकन रिपोर्ट</string>
+    <string name="feasibility_score">व्यवहार्यता स्कोर</string>
+    <string name="location_information">स्थान जानकारी</string>
+    <string name="rainwater_harvesting">वर्षा जल संचयन</string>
+    <string name="artificial_recharge">कृत्रिम रिचार्ज</string>
+    <string name="cost_benefit">लागत लाभ</string>
+    <string name="annual_rainfall">वार्षिक वर्षा</string>
+    <string name="soil_type">मृदा प्रकार</string>
+    <string name="soil_permeability">मृदा पारगम्यता</string>
+    <string name="principal_aquifer">मुख्य जलभृत</string>
+    <string name="groundwater_depth">भूजल गहराई</string>
+    <string name="annual_runoff_potential">वार्षिक बहाव क्षमता</string>
+    <string name="recommended_tank_size">अनुशंसित टैंक क्षमता</string>
+    <string name="feasible">संभव</string>
+    <string name="recommended_structure">अनुशंसित संरचना</string>
+    <string name="initial_investment">प्रारंभिक निवेश</string>
+    <string name="annual_maintenance">वार्षिक रखरखाव</string>
+    <string name="annual_water_savings">वार्षिक जल बचत</string>
+    <string name="annual_monetary_savings">वार्षिक आर्थिक बचत</string>
+    <string name="payback_period">भुगतान अवधि</string>
+    <string name="save_report">रिपोर्ट सहेजें</string>
+    <string name="saving">सहेजा जा रहा है...</string>
+    <string name="save_property_title">प्रॉपर्टी में सहेजें?</string>
+    <string name="save_property_msg">क्या आप इस मूल्यांकन को प्रॉपर्टी के रूप में सहेजना चाहेंगे?</string>
+    <string name="save">सहेजें</string>
+    <string name="not_now">अभी नहीं</string>
+    <string name="language">भाषा</string>
+    <string name="choose_language">भाषा चुनें</string>
+
+        <string name="detecting_location">स्थान का पता लगाया जा रहा है...</string>
+        <string name="location_not_detected">स्थान का पता लगाने में असमर्थ</string>
+        <string name="location_permission_denied">स्थान की अनुमति नहीं दी गई</string>
+        <string name="location_detected">स्थान का पता लगाया गया</string>
+
+</resources>
+

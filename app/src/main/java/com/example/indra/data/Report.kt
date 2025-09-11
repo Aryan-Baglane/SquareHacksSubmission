@@ -14,7 +14,12 @@ data class Report(
     val name: String = "",
     val dwellers: Int = 0,
     val roofArea: Double = 0.0,
-    val openSpace: Double = 0.0
+    val openSpace: Double = 0.0,
+    // New fields for detailed assessment
+    val latitude: Double = 0.0,
+    val longitude: Double = 0.0,
+    val roofType: String = "",
+    val assessmentResponse: AssessmentResponse? = null
 ) {
     // Default constructor for Firebase
     constructor() : this(
@@ -28,6 +33,10 @@ data class Report(
         name = "",
         dwellers = 0,
         roofArea = 0.0,
-        openSpace = 0.0
+        openSpace = 0.0,
+        latitude = 0.0,
+        longitude = 0.0,
+        roofType = "",
+        assessmentResponse = null
     )
 }

@@ -3,6 +3,7 @@ package com.example.indra
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
+import android.content.Context
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -20,10 +21,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
@@ -36,14 +39,20 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.indra.auth.AuthApi
 import com.example.indra.data.Report
+import com.example.indra.i18n.LocaleManager
 import com.example.indra.navigation.AppDestination
 import com.example.indra.navigation.AppRoutes
 import com.example.indra.platform.PlatformSignIn
 import com.example.indra.screen.*
 import com.example.indra.ui.theme.INDRATheme
+import com.example.indra.ui.theme.ThemeManager
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
+    override fun attachBaseContext(newBase: Context) {
+        val wrapped = LocaleManager.wrapContext(newBase)
+        super.attachBaseContext(wrapped)
+    }
     private lateinit var googleSignInLauncher: ActivityResultLauncher<Intent>
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -62,7 +71,11 @@ class MainActivity : ComponentActivity() {
         }
         enableEdgeToEdge()
         setContent {
-            INDRATheme {
+            val isSystemInDarkTheme = isSystemInDarkTheme()
+            val context = LocalContext.current
+            val isDarkTheme = ThemeManager.isDarkTheme(context, isSystemInDarkTheme)
+            
+            INDRATheme(darkTheme = isDarkTheme) {
                 App(
                     onGoogleSignIn = {
                         PlatformSignIn.signIn(googleSignInLauncher)
@@ -114,7 +127,7 @@ fun App(onGoogleSignIn: () -> Unit) {
                         playLoginAnim = false
                         isSignedIn = true
                         navController.navigate(AppRoutes.DASHBOARD) {
-                            popUpTo(navController.graph.findStartDestination().id) {
+                            popUpTo(AppRoutes.DASHBOARD) {
                                 inclusive = true
                             }
                         }
@@ -328,7 +341,8 @@ fun App(onGoogleSignIn: () -> Unit) {
                         }
                         composable(AppRoutes.ASSESS) {
                             AssessmentView(
-                                onReportGenerated = { report ->
+                                onBackClick = { navController.popBackStack() },
+                                onAssessmentComplete = { report ->
                                     reportData = report
                                     navController.navigate(AppRoutes.DETAILED_REPORT)
                                 }

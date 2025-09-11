@@ -94,3 +94,7 @@ private class FirebaseDatabaseApi : DatabaseApi {
 object DatabaseProvider {
     fun database(): DatabaseApi = FirebaseDatabaseApi()
 }
+
+object DatabaseApiProvider {
+    fun databaseApi(): DatabaseApi = FirebaseDatabaseApi()
+}

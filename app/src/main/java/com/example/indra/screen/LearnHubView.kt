@@ -21,7 +21,9 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import com.example.indra.data.Article
+import com.example.indra.R
 
 // --- Category color helper ---
 @Composable
@@ -45,16 +47,16 @@ fun getCategoryColor(category: String): Color {
 @Composable
 fun LearnHubView() {
     val articles = listOf(
-        Article("Types of Aquifers", "Understand the underground layers storing water.", "Aquifers"),
-        Article("DIY Filter Guide", "Learn to build a simple filter for your RWH system.", "DIY"),
-        Article("Success Stories from Your State", "Get inspired by local conservation heroes.", "Stories"),
-        Article("Government Subsidies & Policies", "Find out how the government can help you.", "Policies"),
-        Article("Maintaining Your RWH System", "Tips for ensuring your system runs efficiently.", "Maintenance"),
-        Article("Impact of Water Quality on Health", "Explore the link between clean water and well-being.", "Health"),
-        Article("Starting a Community Water Project", "A step-by-step guide to collaborative initiatives.", "Community"),
-        Article("Smart RWH: Using IoT for Water Management", "Discover how technology can optimize your system.", "Technology"),
-        Article("Water-Wise Gardening Techniques", "Methods to keep your garden lush while saving water.", "Gardening"),
-        Article("Budgeting for Your RWH System", "Tips to plan and manage the finances of installation.", "Budgeting")
+        Article(stringResource(R.string.article_aquifers_title), stringResource(R.string.article_aquifers_desc), stringResource(R.string.category_aquifers)),
+        Article(stringResource(R.string.article_diy_title), stringResource(R.string.article_diy_desc), stringResource(R.string.category_diy)),
+        Article(stringResource(R.string.article_stories_title), stringResource(R.string.article_stories_desc), stringResource(R.string.category_stories)),
+        Article(stringResource(R.string.article_policies_title), stringResource(R.string.article_policies_desc), stringResource(R.string.category_policies)),
+        Article(stringResource(R.string.article_maintenance_title), stringResource(R.string.article_maintenance_desc), stringResource(R.string.category_maintenance)),
+        Article(stringResource(R.string.article_health_title), stringResource(R.string.article_health_desc), stringResource(R.string.category_health)),
+        Article(stringResource(R.string.article_community_title), stringResource(R.string.article_community_desc), stringResource(R.string.category_community)),
+        Article(stringResource(R.string.article_technology_title), stringResource(R.string.article_technology_desc), stringResource(R.string.category_technology)),
+        Article(stringResource(R.string.article_gardening_title), stringResource(R.string.article_gardening_desc), stringResource(R.string.category_gardening)),
+        Article(stringResource(R.string.article_budgeting_title), stringResource(R.string.article_budgeting_desc), stringResource(R.string.category_budgeting))
     )
 
     LazyColumn(
@@ -64,7 +66,7 @@ fun LearnHubView() {
     ) {
         item {
             Text(
-                text = "Learn & Grow",
+                text = stringResource(R.string.learn_hub_title),
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 8.dp)
@@ -132,9 +134,7 @@ fun ExpandableArticleCard(article: Article) {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
-                        text = "Here goes the full details of the article. " +
-                                "You can replace this with actual fetched/longer content. " +
-                                "Expanding smoothly shows this section.",
+                        text = stringResource(R.string.article_expand_details),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurface
                     )

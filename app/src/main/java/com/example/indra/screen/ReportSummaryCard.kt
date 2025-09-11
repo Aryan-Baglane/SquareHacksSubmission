@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import com.example.indra.data.Report
 import java.text.SimpleDateFormat
 import java.util.*
@@ -62,7 +63,7 @@ fun ReportSummaryCard(report: Report) {
                 Icon(
                     imageVector = Icons.Default.LocationOn,
                     contentDescription = "Location",
-                    tint = MaterialTheme.colorScheme.secondary,
+                    tint = MaterialTheme.colorScheme.primaryContainer,
                     modifier = Modifier.size(14.dp)
                 )
                 Spacer(modifier = Modifier.width(4.dp))
@@ -83,7 +84,7 @@ fun ReportSummaryCard(report: Report) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Feasibility Score",
+                    text = stringResource(id = com.example.indra.R.string.label_feasibility_score),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -129,17 +130,17 @@ fun ReportSummaryCard(report: Report) {
             ) {
                 CompactInfoItem(
                     icon = Icons.Default.WaterDrop,
-                    label = "Potential",
+                    label = stringResource(id = com.example.indra.R.string.label_potential),
                     value = "${report.annualHarvestingPotentialLiters}L"
                 )
                 CompactInfoItem(
                     icon = Icons.Default.CurrencyRupee,
-                    label = "Cost",
+                    label = stringResource(id = com.example.indra.R.string.label_estimated_cost),
                     value = "₹${report.estimatedCostInr}"
                 )
                 CompactInfoItem(
                     icon = Icons.Default.Build,
-                    label = "Solution",
+                    label = stringResource(id = com.example.indra.R.string.label_solution),
                     value = report.recommendedSolution.take(15) + if (report.recommendedSolution.length > 15) "..." else ""
                 )
             }

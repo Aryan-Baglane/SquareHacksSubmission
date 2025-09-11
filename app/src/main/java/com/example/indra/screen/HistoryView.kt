@@ -9,6 +9,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import com.example.indra.data.Report
 import com.example.indra.data.ReportRepositoryProvider
 import kotlinx.coroutines.launch
@@ -84,7 +85,7 @@ fun HistoryView(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    "No saved reports yet.",
+                    stringResource(id = com.example.indra.R.string.no_saved_reports),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
