@@ -9,7 +9,11 @@ pluginManagement {
         }
         mavenCentral()
         gradlePluginPortal()
-        maven(url = "https://maven.mappls.com/repository/mappls/")
+        maven {
+            url = uri("https://api.mapbox.com/downloads/v2/releases/maven")
+        }
+
+
     }
 }
 dependencyResolutionManagement {
@@ -17,10 +21,13 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        maven(url = "https://maven.mappls.com/repository/mappls/")
+        maven {
+            url = uri("https://api.mapbox.com/downloads/v2/releases/maven")
+        }
+
+
     }
 }
 
 rootProject.name = "INDRA"
 include(":app")
- 

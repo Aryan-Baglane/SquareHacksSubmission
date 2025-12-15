@@ -1,159 +1,294 @@
 package com.example.indra.screen
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.*
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.sp
 import com.example.indra.data.Article
-import com.example.indra.R
 
-// --- Category color helper ---
+// --- 1. Category Colors & Icons ---
+data class CategoryStyle(val color: Color, val icon: ImageVector)
+
 @Composable
-fun getCategoryColor(category: String): Color {
+fun getCategoryStyle(category: String): CategoryStyle {
     return when (category) {
-        "Aquifers" -> Color(0xFFB2DFDB) // Teal
-        "DIY" -> Color(0xFFF0F4C3) // Lime
-        "Stories" -> Color(0xFFBBDEFB) // Light Blue
-        "Policies" -> Color(0xFFFFCCBC) // Orange
-        "Maintenance" -> Color(0xFFD1C4E9) // Deep Purple
-        "Health" -> Color(0xFFC5E1A5) // Green
-        "Community" -> Color(0xFFF8BBD0) // Pink
-        "Technology" -> Color(0xFFCFD8DC) // Blue-grey
-        "Gardening" -> Color(0xFFE6EE9C) // Light Lime
-        "Budgeting" -> Color(0xFFBCAAA4) // Brown
-        else -> MaterialTheme.colorScheme.surface
+        "Aquifers" -> CategoryStyle(Color(0xFF00838F), Icons.Outlined.Water)      // Cyan 800
+        "DIY" -> CategoryStyle(Color(0xFFEF6C00), Icons.Outlined.Build)           // Orange 800
+        "Stories" -> CategoryStyle(Color(0xFF4527A0), Icons.Outlined.AutoStories) // Deep Purple 800
+        "Policies" -> CategoryStyle(Color(0xFF1565C0), Icons.Outlined.Policy)     // Blue 800
+        "Maintenance" -> CategoryStyle(Color(0xFFAD1457), Icons.Outlined.Engineering) // Pink 800
+        "Health" -> CategoryStyle(Color(0xFF2E7D32), Icons.Outlined.HealthAndSafety) // Green 800
+        "Community" -> CategoryStyle(Color(0xFF6A1B9A), Icons.Outlined.Groups)    // Purple 800
+        "Technology" -> CategoryStyle(Color(0xFF37474F), Icons.Outlined.Memory)   // Blue Grey 800
+        "Gardening" -> CategoryStyle(Color(0xFF558B2F), Icons.Outlined.Yard)      // Light Green 800
+        "Budgeting" -> CategoryStyle(Color(0xFF4E342E), Icons.Outlined.AccountBalanceWallet) // Brown 800
+        else -> CategoryStyle(Color.Gray, Icons.Outlined.Article)
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LearnHubView() {
+fun LearnHubView(
+    onBackClick: () -> Unit
+) {
+    // Dummy Data
     val articles = listOf(
-        Article(stringResource(R.string.article_aquifers_title), stringResource(R.string.article_aquifers_desc), stringResource(R.string.category_aquifers)),
-        Article(stringResource(R.string.article_diy_title), stringResource(R.string.article_diy_desc), stringResource(R.string.category_diy)),
-        Article(stringResource(R.string.article_stories_title), stringResource(R.string.article_stories_desc), stringResource(R.string.category_stories)),
-        Article(stringResource(R.string.article_policies_title), stringResource(R.string.article_policies_desc), stringResource(R.string.category_policies)),
-        Article(stringResource(R.string.article_maintenance_title), stringResource(R.string.article_maintenance_desc), stringResource(R.string.category_maintenance)),
-        Article(stringResource(R.string.article_health_title), stringResource(R.string.article_health_desc), stringResource(R.string.category_health)),
-        Article(stringResource(R.string.article_community_title), stringResource(R.string.article_community_desc), stringResource(R.string.category_community)),
-        Article(stringResource(R.string.article_technology_title), stringResource(R.string.article_technology_desc), stringResource(R.string.category_technology)),
-        Article(stringResource(R.string.article_gardening_title), stringResource(R.string.article_gardening_desc), stringResource(R.string.category_gardening)),
-        Article(stringResource(R.string.article_budgeting_title), stringResource(R.string.article_budgeting_desc), stringResource(R.string.category_budgeting))
+        Article("Understanding Aquifers", "Learn how groundwater is stored naturally beneath the earth.", "Aquifers"),
+        Article("DIY Rain Barrel", "A step-by-step guide to building your own rainwater harvesting system.", "DIY"),
+        Article("Success Stories", "How a community in Rajasthan revived their water table.", "Stories"),
+        Article("Govt Policies 2025", "Subsidies available for installing RWH systems in urban areas.", "Policies"),
+        Article("Filter Maintenance", "Cleaning your filters ensures clean water and system longevity.", "Maintenance"),
+        Article("Water Quality & Health", "Why testing pH levels matters for drinking water safety.", "Health"),
+        Article("Tech in Water", "IoT sensors that detect leakages in real-time.", "Technology"),
+        Article("Urban Gardening", "Using harvested water for your terrace garden.", "Gardening"),
     )
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        item {
-            Text(
-                text = stringResource(R.string.learn_hub_title),
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-        }
+    var searchQuery by remember { mutableStateOf("") }
 
-        items(articles) { article ->
-            ExpandableArticleCard(article = article)
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFF8F9FA))
+    ) {
+        // --- 2. Header Background ---
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(200.dp) // Adjusted height since filters are gone
+                .background(
+                    Brush.linearGradient(
+                        colors = listOf(
+                            Color(0xFF0D47A1), // Deep Blue
+                            Color(0xFF1976D2), // Medium Blue
+                            Color(0xFF00BCD4)  // Cyan Accent
+                        )
+                    ),
+                    shape = RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp)
+                )
+        )
+
+        Column(modifier = Modifier.fillMaxSize()) {
+
+            // --- Navbar & Search ---
+            Column(
+                modifier = Modifier
+                    .padding(top = 48.dp, start = 24.dp, end = 24.dp)
+            ) {
+                // Nav Row
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(
+                        onClick = onBackClick,
+                        modifier = Modifier
+                            .background(Color.White.copy(alpha = 0.2f), CircleShape)
+                            .size(44.dp)
+                    ) {
+                        Icon(Icons.Default.ArrowBack, "Back", tint = Color.White)
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Text(
+                        text = "Knowledge Hub",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Search Bar
+                TextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = { Text("Search topics...", color = Color.White.copy(alpha = 0.8f)) },
+                    leadingIcon = { Icon(Icons.Default.Search, null, tint = Color.White) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .shadow(8.dp, RoundedCornerShape(16.dp), spotColor = Color.Black.copy(alpha = 0.1f))
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Color.White.copy(alpha = 0.2f)),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        cursorColor = Color.White,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent
+                    ),
+                    singleLine = true
+                )
+            }
+
+            // --- Spacing after header ---
+            Spacer(modifier = Modifier.height(40.dp))
+
+            // --- Article List ---
+            // Removed LazyRow (Filters) and reduced complexity
+            LazyColumn(
+                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.fillMaxSize()
+            ) {
+                itemsIndexed(articles) { index, article ->
+                    // Simple search filter logic
+                    if (searchQuery.isEmpty() || article.title.contains(searchQuery, ignoreCase = true) || article.category.contains(searchQuery, ignoreCase = true)) {
+                        EvenColorArticleCard(article, index)
+                    }
+                }
+                item { Spacer(modifier = Modifier.height(40.dp)) }
+            }
         }
     }
 }
 
-@Composable
-fun ExpandableArticleCard(article: Article) {
-    var expanded by remember { mutableStateOf(false) }
-    val cardColor = getCategoryColor(article.category)
+// ================== COMPONENTS ==================
 
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .animateContentSize(animationSpec = spring())
-            .clickable { expanded = !expanded },
-        shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = cardColor) // Card colored
+// --- 3. Even Color Article Card ---
+@Composable
+fun EvenColorArticleCard(article: Article, index: Int) {
+    var expanded by remember { mutableStateOf(false) }
+    val style = getCategoryStyle(article.category)
+
+    // Staggered Entrance Animation
+    var isVisible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        kotlinx.coroutines.delay(index * 50L)
+        isVisible = true
+    }
+
+    AnimatedVisibility(
+        visible = isVisible,
+        enter = slideInVertically { 50 } + fadeIn()
     ) {
-        Column(
+        Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+                .animateContentSize(animationSpec = spring())
+                .shadow(elevation = 0.dp) // Flat look, color provides separation
+                .clickable { expanded = !expanded },
+            shape = RoundedCornerShape(20.dp),
+            // EVEN CARD COLOR: Solid pastel tint of the category color
+            colors = CardDefaults.cardColors(containerColor = style.color.copy(alpha = 0.12f)),
         ) {
-            // Tag chip (light background for contrast)
-            Box(
-                modifier = Modifier
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.2f))
-                    .padding(horizontal = 12.dp, vertical = 4.dp)
+            Column(
+                modifier = Modifier.padding(20.dp)
             ) {
-                Text(
-                    text = article.category,
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
+                Row(verticalAlignment = Alignment.Top) {
+                    // Category Icon Box (Solid Color)
+                    Box(
+                        modifier = Modifier
+                            .size(52.dp)
+                            .background(style.color, RoundedCornerShape(16.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = style.icon,
+                            contentDescription = null,
+                            tint = Color.White, // White icon on solid background
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
 
-            // Title
-            Text(
-                text = article.title,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
+                    Spacer(modifier = Modifier.width(16.dp))
 
-            // Summary (always visible)
-            Text(
-                text = article.description,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
+                    // Text Content
+                    Column(modifier = Modifier.weight(1f)) {
+                        // Category Label
+                        Text(
+                            text = article.category.uppercase(),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = style.color, // Matches icon box
+                            fontWeight = FontWeight.ExtraBold,
+                            letterSpacing = 1.sp
+                        )
 
-            // Expanded details
-            AnimatedVisibility(visible = expanded) {
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Spacer(modifier = Modifier.height(6.dp))
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        Text(
+                            text = article.title,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF1F2937)
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Text(
+                            text = article.description,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color(0xFF455A64),
+                            maxLines = if (expanded) Int.MAX_VALUE else 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+
+                // Expandable Section
+                if (expanded) {
+                    Spacer(modifier = Modifier.height(20.dp))
+                    Divider(color = style.color.copy(alpha = 0.2f))
+                    Spacer(modifier = Modifier.height(16.dp))
+
                     Text(
-                        text = stringResource(R.string.article_expand_details),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface
+                        text = "Full Article Details",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "This is a placeholder for the full article content. In a real application, you would load detailed steps, images, and external links here related to ${article.title}.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.DarkGray,
+                        lineHeight = 22.sp
+                    )
+                    Spacer(modifier = Modifier.height(20.dp))
+                    Button(
+                        onClick = { /* Open Full View */ },
+                        modifier = Modifier.fillMaxWidth().height(48.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = style.color),
+                        shape = RoundedCornerShape(14.dp),
+                        elevation = ButtonDefaults.buttonElevation(0.dp)
+                    ) {
+                        Text("Read Full Guide", color = Color.White, fontWeight = FontWeight.Bold)
+                    }
+                }
+
+                // Toggle Arrow
+                Box(
+                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        contentDescription = null,
+                        tint = style.color.copy(alpha = 0.5f)
                     )
                 }
-            }
-
-            // Chevron icon (aligned right)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
-            ) {
-                Icon(
-                    imageVector = Icons.Default.ChevronRight,
-                    contentDescription = "Expand",
-                    tint = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier
-                        .padding(end = 4.dp)
-                        .rotate(if (expanded) 90f else 0f)
-                )
             }
         }
     }

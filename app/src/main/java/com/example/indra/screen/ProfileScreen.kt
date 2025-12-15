@@ -1,27 +1,27 @@
 package com.example.indra.screen
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Logout
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.HomeWork
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
@@ -40,6 +40,7 @@ fun ProfileScreen(onSignedOut: () -> Unit = {}) {
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
+    // --- Logic Section ---
     LaunchedEffect(Unit) {
         user = AuthApi.currentUser()
         loading = false
@@ -52,157 +53,191 @@ fun ProfileScreen(onSignedOut: () -> Unit = {}) {
             val authPhoto = user?.photoUrl
             if (!authPhoto.isNullOrBlank() && (existing == null || existing.photoUrl != authPhoto)) {
                 DatabaseProvider.database().setUserProfile(
-                    UserProfile(
-                        uid = uid,
-                        displayName = name.ifBlank { user?.displayName },
-                        photoUrl = authPhoto
-                    )
+                    UserProfile(uid = uid, displayName = name.ifBlank { user?.displayName }, photoUrl = authPhoto)
                 )
             }
         }
     }
 
-    if (loading) {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator()
+    // --- UI Section ---
+    val headerHeight = 220.dp
+    val contentOverlap = 100.dp
+
+    Box(modifier = Modifier.fillMaxSize().background(Color(0xFFF8F9FA))) {
+        // 1. Animated Header Background
+        AnimatedHeaderBackground(headerHeight)
+
+        if (loading) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+            return
         }
-        return
-    }
 
-    if (user == null) {
-        AuthScreen(
-            onSignedIn = {
-                editing = false
-                loading = true
-                scope.launch {
-                    user = AuthApi.currentUser()
-                    loading = false
-                    name = user?.displayName.orEmpty()
-                }
-            },
-            onGoogleSignIn = {}
-        )
-    } else {
-        Scaffold(
-            snackbarHost = { SnackbarHost(snackbarHostState) },
-            containerColor = Color(0xFFE3F2FD) // Light blue background
-        ) { paddingValues ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-                    .padding(horizontal = 24.dp, vertical = 20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                if (!editing) {
-                    // Profile Header Card
-                    ProfileHeader(user = user, onEditClick = { editing = true })
+        if (user == null) {
+            // Placeholder for your auth screen logic if needed
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("Please Sign In")
+            }
+        } else {
+            Scaffold(
+                snackbarHost = { SnackbarHost(snackbarHostState) },
+                containerColor = Color.Transparent // Transparent to show header background
+            ) { paddingValues ->
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues)
+                        .padding(horizontal = 24.dp)
+                        .verticalScroll(rememberScrollState()),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // Push content down to overlap the header
+                    Spacer(modifier = Modifier.height(headerHeight - contentOverlap))
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                    if (!editing) {
+                        // Modern Profile Header (Solid Card)
+                        ModernProfileHeader(user = user, onEditClick = { editing = true })
 
-                    // Menu Options
-                    OptionCard(
-                        icon = Icons.Default.HomeWork,
-                        title = "My Properties",
-                        description = "Manage your saved properties"
-                    ) {
-                        // TODO: Implement navigation to My Properties screen
-                    }
-
-                    OptionCard(
-                        icon = Icons.Default.Lock,
-                        title = "Change Password",
-                        description = "Update your account password"
-                    ) {
-                        // TODO: Implement navigation to Change Password screen
-                    }
-
-                    OptionCard(
-                        icon = Icons.Default.Settings,
-                        title = "Settings",
-                        description = "Configure app settings"
-                    ) {
-                        // TODO: Implement navigation to Settings screen
-                    }
-
-                    Spacer(modifier = Modifier.weight(1f))
-
-                    // Sign Out Button
-                    OutlinedButton(
-                        onClick = {
-                            scope.launch {
-                                AuthApi.signOut()
-                                user = null
-                                onSignedOut()
-                            }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.error
-                        ),
-                        border = ButtonDefaults.outlinedButtonBorder.copy(
-                            width = 2.dp,
-
+                        Spacer(modifier = Modifier.height(30.dp))
+                        Text(
+                            "Preferences",
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.align(Alignment.Start).padding(start = 8.dp, bottom = 12.dp)
                         )
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Logout, contentDescription = "Sign Out")
-                            Spacer(Modifier.width(8.dp))
-                            Text("Sign Out", fontSize = 16.sp)
-                        }
-                    }
-                } else {
-                    // Edit Profile View
-                    EditProfileView(
-                        name = name,
-                        onNameChange = { name = it },
-                        onSave = {
-                            scope.launch {
-                                AuthApi.updateProfile(displayName = name, photoUrl = null)
-                                user = AuthApi.currentUser()
-                                user?.uid?.let { uid ->
-                                    DatabaseProvider.database().setUserProfile(
-                                        UserProfile(uid = uid, displayName = name)
-                                    )
+
+                        // Modern Menu Options (Solid Cards)
+                        ModernOptionCard(
+                            icon = Icons.Default.HomeWork,
+                            title = "My Properties",
+                            subtitle = "Manage Saved Locations"
+                        ) {}
+
+                        ModernOptionCard(
+                            icon = Icons.Outlined.Lock,
+                            title = "Security",
+                            subtitle = "Password & Auth"
+                        ) {}
+
+                        ModernOptionCard(
+                            icon = Icons.Outlined.Settings,
+                            title = "Settings",
+                            subtitle = "App Configuration"
+                        ) {}
+
+                        Spacer(modifier = Modifier.height(30.dp))
+
+                        // Modern Sign Out Button
+                        ModernButton(
+                            text = "Sign Out",
+                            icon = Icons.Default.Logout,
+                            isDestructive = true,
+                            onClick = {
+                                scope.launch {
+                                    AuthApi.signOut()
+                                    user = null
+                                    onSignedOut()
                                 }
-                                editing = false
-                                snackbarHostState.showSnackbar("Profile saved!")
                             }
-                        },
-                        onCancel = { editing = false }
-                    )
+                        )
+                        Spacer(modifier = Modifier.height(30.dp))
+                    } else {
+                        // Edit Mode (Solid Card)
+                        ModernEditProfileView(
+                            name = name,
+                            onNameChange = { name = it },
+                            onSave = {
+                                scope.launch {
+                                    AuthApi.updateProfile(displayName = name, photoUrl = null)
+                                    user = AuthApi.currentUser()
+                                    user?.uid?.let { uid ->
+                                        DatabaseProvider.database().setUserProfile(UserProfile(uid = uid, displayName = name))
+                                    }
+                                    editing = false
+                                    snackbarHostState.showSnackbar("Profile saved!")
+                                }
+                            },
+                            onCancel = { editing = false }
+                        )
+                    }
                 }
             }
         }
     }
 }
 
+// -----------------------------------------------------------------------------
+// UI COMPONENTS - MODERN CLEAN STYLE WITH ANIMATED BACKGROUND
+// -----------------------------------------------------------------------------
+
 @Composable
-fun ProfileHeader(user: AuthUser?, onEditClick: () -> Unit) {
+fun AnimatedHeaderBackground(height: Dp) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(height)
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        MaterialTheme.colorScheme.primary,
+                        Color(0xFF4FC3F7) // Lighter blue at bottom for depth
+                    )
+                ),
+                shape = RoundedCornerShape(bottomStart = 48.dp, bottomEnd = 48.dp)
+            )
+    ) {
+        // Decorative Circles in Background for animation effect
+        Box(
+            modifier = Modifier
+                .offset(x = 200.dp, y = (-50).dp)
+                .size(300.dp)
+                .background(Color.White.copy(alpha = 0.1f), CircleShape)
+        )
+        Box(
+            modifier = Modifier
+                .offset(x = (-80).dp, y = 80.dp)
+                .size(180.dp)
+                .background(Color.White.copy(alpha = 0.08f), CircleShape)
+        )
+    }
+}
+
+@Composable
+fun ModernProfileHeader(user: AuthUser?, onEditClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(elevation = 12.dp, shape = RoundedCornerShape(20.dp)),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+            .shadow(12.dp, RoundedCornerShape(32.dp)),
+        shape = RoundedCornerShape(32.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
     ) {
         Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(24.dp)
         ) {
-            Image(
-                painter = rememberAsyncImagePainter(model = user?.photoUrl),
-                contentDescription = "Profile Picture",
-                contentScale = ContentScale.Crop,
+            // Avatar with Gradient Border
+            Box(
                 modifier = Modifier
-                    .size(100.dp)
+                    .size(110.dp)
                     .clip(CircleShape)
-                    .background(Color.Gray)
-            )
+                    .background(
+                        Brush.linearGradient(
+                            listOf(Color(0xFF2196F3), Color(0xFF00BCD4))
+                        )
+                    )
+                    .padding(4.dp) // Border thickness
+                    .clip(CircleShape)
+            ) {
+                Image(
+                    painter = rememberAsyncImagePainter(model = user?.photoUrl),
+                    contentDescription = "Profile",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize().clip(CircleShape).background(Color(0xFFE0E0E0))
+                )
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -210,72 +245,101 @@ fun ProfileHeader(user: AuthUser?, onEditClick: () -> Unit) {
                 text = user?.displayName ?: "User Name",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
-                color = Color.Black.copy(alpha = 0.8f)
+                color = Color(0xFF1A237E) // Deep Blue Text
             )
 
-            Spacer(modifier = Modifier.height(4.dp))
-
             Text(
-                text = user?.email ?: "user@example.com",
+                text = user?.email ?: "email@example.com",
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color.Gray
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-            Button(
-                onClick = onEditClick,
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
-                shape = RoundedCornerShape(12.dp)
+            // Edit Button (Pill shape)
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(50))
+                    .background(
+                        Brush.horizontalGradient(
+                            listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.secondary)
+                        )
+                    )
+                    .clickable { onEditClick() }
+                    .padding(horizontal = 32.dp, vertical = 10.dp)
             ) {
-                Text("Edit Profile")
+                Text("Edit Profile", color = Color.White, fontWeight = FontWeight.SemiBold)
             }
         }
     }
 }
 
 @Composable
-fun OptionCard(icon: ImageVector, title: String, description: String, onClick: () -> Unit) {
-    Card(
+fun ModernOptionCard(icon: ImageVector, title: String, subtitle: String, onClick: () -> Unit) {
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .height(80.dp)
-            .padding(vertical = 4.dp)
-            .clickable(onClick = onClick)
-            .shadow(elevation = 8.dp, shape = RoundedCornerShape(16.dp)),
-        shape = RoundedCornerShape(16.dp)
+            .padding(vertical = 8.dp),
+        shape = RoundedCornerShape(20.dp),
+        color = Color.White,
+        shadowElevation = 4.dp,
+        onClick = onClick
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 20.dp),
+            modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                modifier = Modifier.size(36.dp),
-                tint = MaterialTheme.colorScheme.primary
-            )
-            Spacer(modifier = Modifier.width(20.dp))
-            Column {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.Gray
-                )
+            // Icon Container
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
             }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(title, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.Black.copy(alpha=0.8f))
+                Text(subtitle, fontSize = 12.sp, color = Color.Gray)
+            }
+
+            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.Gray)
         }
     }
 }
 
 @Composable
-fun EditProfileView(
+fun ModernButton(text: String, icon: ImageVector, isDestructive: Boolean = false, onClick: () -> Unit) {
+    val containerColor = if (isDestructive) Color(0xFFFFEBEE) else Color.White
+    val contentColor = if (isDestructive) Color(0xFFD32F2F) else MaterialTheme.colorScheme.primary
+    val borderColor = if (isDestructive) Color(0xFFFFCDD2) else Color.LightGray
+
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp),
+        shape = RoundedCornerShape(16.dp),
+        color = containerColor,
+        border = BorderStroke(1.dp, borderColor),
+        onClick = onClick
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Icon(icon, contentDescription = null, tint = contentColor)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(text, fontWeight = FontWeight.Bold, color = contentColor)
+        }
+    }
+}
+
+@Composable
+fun ModernEditProfileView(
     name: String,
     onNameChange: (String) -> Unit,
     onSave: () -> Unit,
@@ -284,42 +348,63 @@ fun EditProfileView(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(elevation = 12.dp, shape = RoundedCornerShape(20.dp)),
-        shape = RoundedCornerShape(20.dp),
+            .shadow(12.dp, RoundedCornerShape(32.dp)),
+        shape = RoundedCornerShape(32.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(
-            modifier = Modifier.padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(24.dp)
         ) {
-            Text(
-                text = "Edit Profile",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
-            )
+            Text("Update Profile", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Custom TextField Styling
             OutlinedTextField(
                 value = name,
                 onValueChange = onNameChange,
-                label = { Text("Display name") },
-                modifier = Modifier.fillMaxWidth()
+                label = { Text("Display Name") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = Color.LightGray,
+                    focusedContainerColor = Color(0xFFF5F5F5),
+                    unfocusedContainerColor = Color(0xFFF5F5F5)
+                ),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
             )
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Button(
-                    onClick = onSave,
-                    modifier = Modifier.weight(1f)
-                ) { Text("Save") }
-                OutlinedButton(
-                    onClick = onCancel,
-                    modifier = Modifier.weight(1f)
-                ) { Text("Cancel") }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                // Cancel Button
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(50.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Color.Gray.copy(alpha=0.1f))
+                        .clickable { onCancel() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Cancel", fontWeight = FontWeight.Bold, color = Color.Gray)
+                }
+
+                // Save Button
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(50.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Brush.horizontalGradient(listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.secondary)))
+                        .clickable { onSave() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Save Changes", fontWeight = FontWeight.Bold, color = Color.White)
+                }
             }
         }
     }
 }
-
-// NOTE: Add `coil-compose` dependency to your `build.gradle` file for `rememberAsyncImagePainter` to work:
-// implementation("io.coil-kt:coil-compose:2.5.0")

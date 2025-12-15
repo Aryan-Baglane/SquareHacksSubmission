@@ -1,36 +1,5 @@
 package com.example.indra.screen
 
-import androidx.compose.animation.core.LinearOutSlowInEasing
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.People
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.example.indra.R
-import com.google.android.gms.location.*
-import kotlinx.coroutines.delay
-import java.util.*
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
@@ -38,473 +7,818 @@ import android.location.Geocoder
 import android.location.Location
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import coil.compose.rememberAsyncImagePainter
+import com.example.indra.auth.AuthApi
+import com.example.indra.data.AuthUser
+import com.example.indra.db.DatabaseProvider
+import com.google.android.gms.location.*
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import com.example.indra.R.drawable.hand_drawn_water_drop_cartoon_illustration
+import java.util.*
+import kotlin.math.PI
+import kotlin.math.sin
 
+@SuppressLint("MissingPermission")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DashboardScreen(onStartAssessment: () -> Unit) {
-    var currentLocation by remember { mutableStateOf("Fetching location...") }
+fun DashboardScreen(
+    navController: NavController,
+    onStartAssessment: () -> Unit,
+    onChatClick: () -> Unit,
+    onReportClick: () -> Unit,
+    onTipClick: () -> Unit,
+    onCommunityClick: () -> Unit,
+    onSettingsClick: () -> Unit,
+    onHistoryClick: () -> Unit,
+    onHelpClick: () -> Unit,
+    onProfileClick: () -> Unit,
+    onMyPropertiesClick: () -> Unit,
+    onMyHouseClick: () -> Unit
+) {
+    // ---------- STATE ----------
+    var user by remember { mutableStateOf<AuthUser?>(null) }
+    var name by remember { mutableStateOf("") }
+    var currentLocation by remember { mutableStateOf("Locating...") }
     var latitude by remember { mutableStateOf<Double?>(null) }
     var longitude by remember { mutableStateOf<Double?>(null) }
     var feasibilityScore by remember { mutableStateOf<Double?>(null) }
     var potentialRunoff by remember { mutableStateOf<Double?>(null) }
     var isLoading by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
+
+    // Animation States
+    var isVisible by remember { mutableStateOf(false) }
+
     val context = LocalContext.current
     val fusedClient = remember { LocationServices.getFusedLocationProviderClient(context) }
     val scope = rememberCoroutineScope()
 
+    // ---------- EFFECTS ----------
+    LaunchedEffect(Unit) {
+        isVisible = true // Trigger entrance animation
+        user = AuthApi.currentUser()
+        name = user?.displayName.orEmpty()
+    }
+
+    // Location Permission
     val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestMultiplePermissions(),
-        onResult = { permissions ->
-            if (permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
-                permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
-            ) {
-                fetchLocationFull(context, fusedClient) { addr, lat, lon ->
-                    currentLocation = addr ?: "Unable to fetch location"
-                    latitude = lat
-                    longitude = lon
-                }
-            } else {
-                currentLocation = "Permission denied"
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { perms ->
+        if (perms[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+            perms[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        ) {
+            fetchLocationFull(context, fusedClient) { addr, lat, lon ->
+                currentLocation = addr ?: "Unknown"
+                latitude = lat
+                longitude = lon
             }
         }
-    )
+    }
 
     LaunchedEffect(Unit) {
         permissionLauncher.launch(
-            arrayOf(
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            )
+            arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
         )
     }
 
+    // Run Logic
     LaunchedEffect(latitude, longitude) {
-        val lat = latitude
-        val lon = longitude
-        if (lat != null && lon != null) {
+        if (latitude != null && longitude != null) {
             isLoading = true
-            error = null
             scope.launch {
-                try {
-                    // Fetch onboarding profile
-                    val user = com.example.indra.auth.AuthApi.currentUser()
-                    val uid = user?.uid
-                    if (uid != null) {
-                        val profile = com.example.indra.db.DatabaseProvider.database().getUserProfile(uid)
-                        if (profile != null && profile.onboardingCompleted) {
-                            val request = com.example.indra.data.AssessmentRequest(
-                                name = profile.displayName ?: "Home",
-                                latitude = lat,
-                                longitude = lon,
-                                numDwellers = profile.numDwellers,
-                                roofAreaSqm = profile.roofAreaSqm,
-                                openSpaceSqm = profile.openSpaceSqm,
-                                roofType = profile.roofType
-                            )
-                            val repo = com.example.indra.data.AssessmentRepositoryProvider.repository()
-                            val result = repo.performAssessment(request)
-                            result.onSuccess { resp ->
-                                feasibilityScore = resp.feasibilityScore
-                                potentialRunoff = resp.rwhAnalysis.potentialAnnualRunoffLiters
-                            }.onFailure { e -> error = e.message }
-                        }
+                val profile = DatabaseProvider.database().getUserProfile(user?.uid ?: return@launch)
+                if (profile?.onboardingCompleted == true) {
+                    val repo = com.example.indra.data.AssessmentRepositoryProvider.repository()
+                    repo.performAssessment(
+                        com.example.indra.data.AssessmentRequest(
+                            name = profile.displayName ?: "Home",
+                            latitude = latitude!!,
+                            longitude = longitude!!,
+                            numDwellers = profile.numDwellers,
+                            roofAreaSqm = profile.roofAreaSqm,
+                            openSpaceSqm = profile.openSpaceSqm,
+                            roofType = profile.roofType
+                        )
+                    ).onSuccess {
+                        feasibilityScore = it.feasibilityScore
+                        potentialRunoff = it.rwhAnalysis.potentialAnnualRunoffLiters
                     }
-                } catch (e: Exception) {
-                    error = e.message
-                } finally {
-                    isLoading = false
                 }
+                isLoading = false
             }
         }
     }
 
-    Surface(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(Color(0xFFE3F2FD), Color.White)
-                )
-            )
-    ) {
-        Column(
-            Modifier
-                .fillMaxSize()
-                .padding(horizontal = 18.dp, vertical = 12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Spacer(modifier = Modifier.height(12.dp))
-            AnimatedEntrance {
-                Text(
-                    "Personalised Feasibility Report",
-                    style = MaterialTheme.typography.headlineLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black.copy(alpha = 0.7f),
-                    fontSize = 26.sp
-                )
-            }
-            Spacer(Modifier.height(12.dp))
-            if (error != null) {
-                Text(error!!, color = MaterialTheme.colorScheme.error)
-            }
-            AnimatedEntrance(delayMillis = 120) { Metrics(currentLocation = currentLocation, score = feasibilityScore, loading = isLoading) }
-            AnimatedEntrance(delayMillis = 240) { HarvestingPotential(potentialRunoff) }
-            AnimatedEntrance(delayMillis = 360) { Recommandation() }
-            AnimatedEntrance(delayMillis = 480) { StartNewAssessmentCard(onClick = onStartAssessment) }
-        }
-    }
-}
-
-// Entrance animation for all dashboard sections
-@Composable
-fun AnimatedEntrance(
-    delayMillis: Int = 0,
-    content: @Composable () -> Unit
-) {
-    var visible by remember { mutableStateOf(false) }
-    val alpha by animateFloatAsState(if (visible) 1f else 0f, animationSpec = tween(700), label = "fadeIn")
-    val translateY by animateFloatAsState(if (visible) 0f else 40f, animationSpec = tween(800), label = "slideUp")
-
-    LaunchedEffect(Unit) {
-        delay(delayMillis.toLong())
-        visible = true
-    }
+    // ---------- UI ----------
+    val headerHeight = 240.dp
+    val overlapHeight = 90.dp
 
     Box(
         modifier = Modifier
-            .graphicsLayer { this.alpha = alpha; translationY = translateY }
-            .fillMaxWidth()
+            .fillMaxSize()
+            .background(Color(0xFFF8F9FA)) // Very subtle grey for contrast
     ) {
-        content()
-    }
-}
-
-@Composable
-fun Metrics(currentLocation: String = "Current Location", score: Double? = null, loading: Boolean = false) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(260.dp)
-            .shadow(elevation = 16.dp, shape = RoundedCornerShape(28.dp)),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        shape = RoundedCornerShape(28.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 10.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(24.dp)
-                .fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            LocationChip(currentLocation)
-            Spacer(Modifier.height(14.dp))
-            Text(
-                text = "Feasibility Score",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary,
-                fontSize = 22.sp
-            )
-            Spacer(Modifier.height(10.dp))
-            ProgressAnimated(target = if (score != null) (score / 100.0).toFloat().coerceIn(0f,1f) else null, loading = loading)
-        }
-    }
-}
-
-@Composable
-fun LocationChip(location: String) {
-    Surface(
-        shape = RoundedCornerShape(50),
-        color = Color(0xFFB3E5FC).copy(alpha = 0.7f),
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(Icons.Default.Home, contentDescription = "Location", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
-            Spacer(modifier = Modifier.width(7.dp))
-            Text(location, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodyMedium)
-        }
-    }
-}
-
-@Composable
-fun ProgressAnimated(target: Float? = null, loading: Boolean = false) {
-    var progressTarget by remember { mutableStateOf(0f) }
-    LaunchedEffect(target) { progressTarget = target ?: if (loading) 0f else 0.0f }
-    val animatedProgress by animateFloatAsState(
-        targetValue = progressTarget,
-        animationSpec = tween(1500, easing = LinearOutSlowInEasing),
-        label = "progressAnim"
-    )
-    val animatedPercentage = (animatedProgress * 100).toInt()
-
-    Box(contentAlignment = Alignment.Center) {
-        CircularProgressIndicator(
-            progress = { animatedProgress },
-            modifier = Modifier.size(120.dp),
-            color = Color(0xFF0288D1),
-            strokeWidth = 8.dp,
-            trackColor = Color(0xFFB3E5FC).copy(alpha = 0.7f),
-        )
-        Text(
-            "${if (target == null && loading) "..." else "$animatedPercentage%"}",
-            style = MaterialTheme.typography.headlineMedium,
-            color = Color(0xFF0288D1),
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(6.dp)
-        )
-    }
-}
-
-@Composable
-fun HarvestingPotential(potentialRunoffLiters: Double? = null) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(140.dp)
-            .padding(vertical = 10.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        shape = RoundedCornerShape(24.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 20.dp, vertical = 18.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Image(
-                painterResource(R.drawable.rain_11198966),
-                contentDescription = "Rain",
-                modifier = Modifier.size(48.dp)
-            )
-            Spacer(Modifier.width(20.dp))
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.SpaceBetween,
-                horizontalAlignment = Alignment.Start
-            ) {
-                Text(
-                    text = "Annual Harvesting Potential",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontSize = 18.sp
-                )
-                Spacer(modifier = Modifier.height(14.dp))
-                Text(
-                    text = potentialRunoffLiters?.let {
-                        val v = it.toLong()
-                        "${String.format(Locale.getDefault(), "%,d", v)} liters"
-                    } ?: "Calculating...",
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF0288D1)
-                )
-            }
-            Spacer(modifier = Modifier.width(8.dp))
-            Image(
-                painter = painterResource(R.drawable.stats_11072737),
-                contentDescription = "Stats",
-                modifier = Modifier.size(50.dp)
-            )
-        }
-    }
-}
-
-@Composable
-fun Recommandation() {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(110.dp)
-            .padding(vertical = 10.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        shape = RoundedCornerShape(24.dp)
-    ) {
-        Row(
+        // 1. ANIMATED HEADER BACKGROUND
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .height(headerHeight)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.primary,
+                            Color(0xFF007EC1) // A slightly brighter blue
+                        )
+                    ),
+                    shape = RoundedCornerShape(bottomStart = 40.dp, bottomEnd = 40.dp)
+                )
         ) {
-            Image(
-                painter = painterResource(R.drawable.rain_water_12277899),
-                contentDescription = "Recommendation",
-                modifier = Modifier.size(44.dp)
-            )
-            Spacer(Modifier.width(14.dp))
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.SpaceBetween
+            // Header Content
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 50.dp, start = 24.dp, end = 24.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text("Recommended Solution", fontSize = 17.sp, fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text("Recharge Pit", fontSize = 16.sp, fontWeight = FontWeight.Medium, color = Color.Black.copy(alpha = 0.65f))
-                    Image(
-                        painter = painterResource(R.drawable.save_water),
-                        contentDescription = "Water Save",
-                        modifier = Modifier.size(40.dp)
+                Column {
+                    Text(
+                        text = "Hello, $name",
+                        color = Color.White,
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold
                     )
+                    AnimatedVisibility(visible = true, enter = fadeIn() + expandHorizontally()) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Filled.LocationOn,
+                                contentDescription = null,
+                                tint = Color.White.copy(alpha = 0.8f),
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = currentLocation,
+                                color = Color.White.copy(alpha = 0.8f),
+                                style = MaterialTheme.typography.bodySmall,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
                 }
+
+                // Pulsing Profile Image
+                val infiniteTransition = rememberInfiniteTransition(label = "profile")
+                val scale by infiniteTransition.animateFloat(
+                    initialValue = 1f, targetValue = 1.05f,
+                    animationSpec = infiniteRepeatable(tween(1000), RepeatMode.Reverse),
+                    label = "scale"
+                )
+
+                Image(
+                    painter = rememberAsyncImagePainter(user?.photoUrl),
+                    contentDescription = "Profile",
+                    modifier = Modifier
+                        .scale(scale)
+                        .size(80.dp)
+                        .clip(CircleShape)
+                        .border(2.dp, Color.White.copy(alpha = 0.5f), CircleShape)
+                        .clickable { onProfileClick() },
+                    contentScale = ContentScale.Crop
+                )
+            }
+        }
+
+        // 2. SCROLLABLE CONTENT
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Spacer(modifier = Modifier.height(headerHeight - overlapHeight))
+
+            // -- Feasibility Card with Glass Pouring Animation --
+            AnimatedVisibility(
+                visible = isVisible,
+                enter = slideInVertically(initialOffsetY = { 100 }) + fadeIn()
+            ) {
+                WaterWaveCard(
+                    score = feasibilityScore,
+                    loading = isLoading,
+                    potentialRunoff = potentialRunoff
+                )
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // -- Search Bar --
+            AnimatedVisibility(
+                visible = isVisible,
+                enter = slideInVertically(initialOffsetY = { 100 }, animationSpec = tween(300)) + fadeIn()
+            ) {
+                SleekSearchBar(navController)
+            }
+
+            // -- Services Grid --
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp),
+                horizontalArrangement = Arrangement.Start
+            ) {
+                Text(
+                    text = "Quick Actions",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black.copy(alpha = 0.7f)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Grid Layout
+            AnimatedGridMenu(
+                onStartAssessment, onChatClick, onReportClick, onTipClick,
+                onCommunityClick, onSettingsClick, onHistoryClick, onHelpClick,
+                onProfileClick, onMyPropertiesClick, onMyHouseClick
+            )
+        }
+    }
+}
+
+/* ================= COMPOSABLES ================= */
+
+@Composable
+fun WaterWaveCard(
+    score: Double?,
+    loading: Boolean,
+    potentialRunoff: Double?
+) {
+    // Target percentage (0.0 to 1.0)
+    val targetProgress = (score?.toFloat() ?: 0f) / 100f
+
+    // The actual progress shown in the wave
+    var currentProgress by remember { mutableStateOf(0f) }
+
+    // Trigger animation
+    var startPourAnimation by remember { mutableStateOf(false) }
+
+    LaunchedEffect(loading, score) {
+        if (!loading && score != null) {
+            currentProgress = 0f
+            // --- WAIT TIME ---
+            // Gives the app a moment to "breathe" before starting the show
+            delay(800)
+            startPourAnimation = true
+        } else {
+            startPourAnimation = false
+        }
+    }
+
+    Card(
+        modifier = Modifier
+            .padding(horizontal = 20.dp)
+            .fillMaxWidth()
+            .height(240.dp)
+            .shadow(16.dp, RoundedCornerShape(32.dp), spotColor = MaterialTheme.colorScheme.primary.copy(alpha=0.3f)),
+        shape = RoundedCornerShape(32.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White)
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            // CONTENT LAYER
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = 24.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // LEFT SIDE: The Wave Gauge
+                Box(
+                    modifier = Modifier
+                        .weight(0.45f)
+                        .fillMaxHeight(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(130.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFFF0F4F8))
+                    )
+
+                    WaveLoadingIndicator(
+                        progress = if (loading) 0.1f else currentProgress,
+                        modifier = Modifier
+                            .size(130.dp)
+                            .clip(CircleShape),
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                        isMoving = true
+                    )
+
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = if (loading) "--" else "${(currentProgress * 100).toInt()}%",
+                            fontSize = 32.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = if (currentProgress > 0.3f) Color.Black else MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.shadow(0.dp)
+                        )
+                    }
+                }
+
+                // RIGHT SIDE: Details
+                Column(
+                    modifier = Modifier
+                        .weight(0.55f)
+                        .padding(end = 24.dp, top = 16.dp, bottom = 16.dp),
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = "Feasibility",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color.Gray
+                    )
+                    Text(
+                        text = when {
+                            loading -> "Calculating..."
+                            (score ?: 0.0) > 75 -> "Excellent"
+                            (score ?: 0.0) > 40 -> "Moderate"
+                            else -> "Low Potential"
+                        },
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    if (potentialRunoff != null && potentialRunoff > 0) {
+                        Surface(
+                            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Outlined.WaterDrop,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(14.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "${potentialRunoff.toInt()}L / yr",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ANIMATION LAYER (Drawn on top)
+            if (startPourAnimation) {
+                PouringGlassAnimation(
+                    targetFill = targetProgress,
+                    onFillUpdate = { progress -> currentProgress = progress },
+                    onFinished = { startPourAnimation = false }
+                )
             }
         }
     }
 }
 
 @Composable
-fun StartNewAssessmentCard(onClick: () -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(98.dp)
-            .clickable { onClick() },
-        elevation = CardDefaults.cardElevation(defaultElevation = 10.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFE3F2FD)),
-        shape = RoundedCornerShape(20.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column {
-                Text(
-                    "Start New Assessment",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Text(
-                    "Tap to estimate harvesting feasibility",
-                    fontSize = 14.sp,
-                    color = Color.Gray
+fun PouringGlassAnimation(
+    targetFill: Float,
+    onFillUpdate: (Float) -> Unit,
+    onFinished: () -> Unit
+) {
+    // 0f = Offscreen Right, 1f = Pouring Position
+    val positionProgress = remember { Animatable(0f) }
+
+    val glassTilt = remember { Animatable(0f) }
+    val streamHeight = remember { Animatable(0f) }
+    val fillProgress = remember { Animatable(0f) }
+
+    val waterColor = MaterialTheme.colorScheme.primary
+
+    LaunchedEffect(Unit) {
+        // 1. Enter: Slide in smoothly with a slight ease-out
+        positionProgress.animateTo(
+            targetValue = 0.9f,
+            animationSpec = tween(1000, easing = EaseOutCubic)
+        )
+
+        // Short pause before action
+        delay(100)
+
+        // 2. Tilt Glass
+        glassTilt.animateTo(
+            targetValue = -45f,
+            animationSpec = tween(600, easing = FastOutSlowInEasing)
+        )
+
+        // 3. Pour Stream (Gravity effect: Fast down)
+        streamHeight.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(300, easing = EaseInExpo)
+        )
+
+        // 4. Fill the Circle & Drain the Glass
+        // Slower duration for realism (2.5 seconds to fill)
+        fillProgress.animateTo(
+            targetValue = targetFill,
+            animationSpec = tween(2500, easing = LinearEasing),
+            block = { onFillUpdate(this.value) }
+        )
+
+        // 5. Retract Stream (Snap up)
+        streamHeight.animateTo(
+            targetValue = 0f,
+            animationSpec = tween(250, easing = EaseOutExpo)
+        )
+
+        // 6. Untilt
+        glassTilt.animateTo(
+            targetValue = 0f,
+            animationSpec = tween(600, easing = EaseOutBack)
+        )
+
+        // 7. Exit: Slide out smoothly
+        positionProgress.animateTo(
+            targetValue = 0f,
+            animationSpec = tween(800, easing = EaseInCubic)
+        )
+
+        onFinished()
+    }
+
+    Canvas(modifier = Modifier.fillMaxSize()) {
+        val glassWidth = 60.dp.toPx()
+        val glassHeight = 80.dp.toPx()
+
+        // --- Calculate Dynamic Position ---
+        // Target: Roughly centered above the circle (approx 22.5% of width)
+        val targetX = size.width * 0.225f
+        // Start: Offscreen to the right (Width + buffer)
+        val startX = size.width + glassWidth + 20f
+
+        // Interpolate current X based on animation progress
+        val currentX = startX + (targetX - startX) * positionProgress.value
+        val currentY = 30.dp.toPx()
+
+        // 1. Draw Stream (Behind glass effectively)
+        if (streamHeight.value > 0f) {
+            val streamStart = Offset(currentX - glassWidth / 2, currentY + 10f)
+            val streamEndY = size.height * 0.7f
+
+            // Make the stream slightly thinner than the opening for realism
+            val streamWidth = 6.dp.toPx() * (0.8f + 0.2f * streamHeight.value)
+
+            drawLine(
+                color = waterColor,
+                start = streamStart,
+                end = Offset(
+                    streamStart.x,
+                    streamStart.y + (streamEndY - streamStart.y) * streamHeight.value
+                ),
+                strokeWidth = streamWidth,
+                cap = StrokeCap.Round
+            )
+        }
+
+        // 2. Draw Glass
+        rotate(degrees = glassTilt.value, pivot = Offset(currentX - glassWidth / 2, currentY)) {
+            val path = Path().apply {
+                moveTo(currentX - glassWidth / 2, currentY) // Top Left
+                lineTo(currentX + glassWidth / 2, currentY) // Top Right
+                lineTo(currentX + glassWidth / 2 - 12f, currentY + glassHeight) // Bottom Right (more taper)
+                lineTo(currentX - glassWidth / 2 + 12f, currentY + glassHeight) // Bottom Left (more taper)
+                close()
+            }
+
+            // Water inside Glass
+            clipPath(path) {
+                // Water level calculation:
+                // Starts at 0.8 (full-ish). As fillProgress goes 0->target, this goes down.
+                // We exaggerate the draining so it looks like it's emptying.
+                val drainFactor = (fillProgress.value / targetFill).coerceIn(0f, 1f)
+                val waterLevelY = currentY + glassHeight * (0.2f + (0.8f * drainFactor))
+
+                drawRect(
+                    color = waterColor.copy(alpha = 0.6f),
+                    topLeft = Offset(currentX - glassWidth, waterLevelY),
+                    size = Size(glassWidth * 2, glassHeight)
                 )
             }
-            Icon(
-                imageVector = Icons.Filled.People,
-                contentDescription = "Assessment Icon",
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(40.dp)
+
+            // Glass Outline (Thicker for cartoon realism)
+            drawPath(
+                path = path,
+                color = Color.Gray.copy(alpha=0.6f),
+                style = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round)
+            )
+
+            // Add a small "glint" or highlight on the glass
+            val highlightPath = Path().apply {
+                moveTo(currentX - glassWidth / 2 + 8f, currentY + 10f)
+                lineTo(currentX - glassWidth / 2 + 12f, currentY + glassHeight - 10f)
+            }
+            drawPath(
+                path = highlightPath,
+                color = Color.White.copy(alpha=0.4f),
+                style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round)
             )
         }
     }
 }
 
-// Location helper functions
-@SuppressLint("MissingPermission")
-private fun fetchLocation(
-    context: Context,
-    fusedClient: FusedLocationProviderClient,
-    callback: (String?) -> Unit
+/**
+ * A beautiful animated sine-wave filling effect.
+ */
+@Composable
+fun WaveLoadingIndicator(
+    progress: Float,
+    modifier: Modifier = Modifier,
+    color: Color,
+    isMoving: Boolean = true
 ) {
-    fusedClient.lastLocation
-        .addOnSuccessListener { location: Location? ->
-            if (location != null) {
-                callback(location.toAddress(context))
-            } else {
-                val request = LocationRequest.Builder(
-                    Priority.PRIORITY_HIGH_ACCURACY, 1000
-                ).setMaxUpdates(1).build()
+    val infiniteTransition = rememberInfiniteTransition(label = "wave")
+    val waveShift by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 2 * PI.toFloat(),
+        animationSpec = infiniteRepeatable(
+            animation = tween(1200, easing = LinearEasing), // Slightly slower wave for calm look
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "waveShift"
+    )
 
-                fusedClient.requestLocationUpdates(
-                    request,
-                    object : LocationCallback() {
-                        override fun onLocationResult(result: LocationResult) {
-                            val loc = result.lastLocation
-                            callback(loc?.toAddress(context))
-                            fusedClient.removeLocationUpdates(this)
-                        }
-                    },
-                    null
-                )
+    Canvas(modifier = modifier) {
+        val width = size.width
+        val height = size.height
+        val waterLevelY = height * (1 - progress)
+
+        val path = Path().apply {
+            moveTo(0f, waterLevelY)
+            // Draw sine wave
+            for (x in 0..width.toInt() step 5) {
+                val amp = if (isMoving) 12f else 0f // Slightly smaller amplitude
+                val y = waterLevelY + amp * sin((x * 0.02f) + waveShift) // 0.02 frequency for smoother wave
+                lineTo(x.toFloat(), y)
             }
+            lineTo(width, height)
+            lineTo(0f, height)
+            close()
         }
-        .addOnFailureListener {
-            callback(null)
-        }
+
+        // Draw Water
+        drawPath(
+            path = path,
+            brush = Brush.verticalGradient(
+                colors = listOf(color.copy(alpha = 0.7f), color)
+            )
+        )
+    }
 }
 
-@SuppressLint("MissingPermission")
-private fun fetchLocationFull(
-    context: Context,
-    fusedClient: FusedLocationProviderClient,
-    callback: (String?, Double?, Double?) -> Unit
+@Composable
+fun AnimatedGridMenu(
+    onStartAssessment: () -> Unit,
+    onChatClick: () -> Unit,
+    onReportClick: () -> Unit,
+    onTipClick: () -> Unit,
+    onCommunityClick: () -> Unit,
+    onSettingsClick: () -> Unit,
+    onHistoryClick: () -> Unit,
+    onHelpClick: () -> Unit,
+    onProfileClick: () -> Unit,
+    onMyPropertiesClick: () -> Unit,
+    onMyHouseClick: () -> Unit
 ) {
-    fusedClient.lastLocation
-        .addOnSuccessListener { location: Location? ->
-            if (location != null) {
-                callback(location.toAddress(context), location.latitude, location.longitude)
-            } else {
-                val request = LocationRequest.Builder(
-                    Priority.PRIORITY_HIGH_ACCURACY, 1000
-                ).setMaxUpdates(1).build()
+    val menuItems = listOf(
+        MenuItemData("New Scan", Icons.Outlined.AddCircleOutline, Color(0xFF2196F3), onStartAssessment),
+        MenuItemData("My House", Icons.Outlined.Home, Color(0xFF4CAF50), onMyHouseClick),
+        MenuItemData("Chat", Icons.Outlined.ChatBubbleOutline, Color(0xFFE91E63), onChatClick),
+        MenuItemData("Report", Icons.Outlined.Analytics, Color(0xFF9C27B0), onReportClick),
+        MenuItemData("Properties", Icons.Outlined.HomeWork, Color(0xFF673AB7), onMyPropertiesClick),
+        MenuItemData("Tips", Icons.Outlined.Lightbulb, Color(0xFFFFC107), onTipClick),
+        MenuItemData("History", Icons.Outlined.History, Color(0xFF795548), onHistoryClick),
+        MenuItemData("Community", Icons.Filled.MoreHoriz, Color(0xFF009688), onCommunityClick),
+        MenuItemData("Profile", Icons.Outlined.Person, Color(0xFF3F51B5), onProfileClick),
+        MenuItemData("Settings", Icons.Outlined.Settings, Color(0xFF607D8B), onSettingsClick),
+        MenuItemData("Help", Icons.Outlined.HelpOutline, Color(0xFFF44336), onHelpClick),
+    )
 
-                fusedClient.requestLocationUpdates(
-                    request,
-                    object : LocationCallback() {
-                        override fun onLocationResult(result: LocationResult) {
-                            val loc = result.lastLocation
-                            callback(loc?.toAddress(context), loc?.latitude, loc?.longitude)
-                            fusedClient.removeLocationUpdates(this)
-                        }
-                    },
-                    null
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(4),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.height(400.dp)
+    ) {
+        itemsIndexed(menuItems) { index, item ->
+            var visible by remember { mutableStateOf(false) }
+            LaunchedEffect(Unit) {
+                kotlinx.coroutines.delay(index * 50L)
+                visible = true
+            }
+
+            AnimatedVisibility(
+                visible = visible,
+                enter = scaleIn(animationSpec = spring(dampingRatio = 0.6f)) + fadeIn()
+            ) {
+                SleekGridItem(item)
+            }
+        }
+    }
+}
+
+@Composable
+fun SleekGridItem(item: MenuItemData) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.bounceClick { item.onClick() }
+    ) {
+        Box(
+            modifier = Modifier
+                .size(64.dp)
+                .shadow(8.dp, RoundedCornerShape(20.dp), spotColor = item.color.copy(alpha = 0.3f))
+                .background(Color.White, RoundedCornerShape(20.dp)),
+            contentAlignment = Alignment.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.linearGradient(
+                            colors = listOf(
+                                item.color.copy(alpha = 0.1f),
+                                item.color.copy(alpha = 0.05f)
+                            )
+                        ),
+                        RoundedCornerShape(20.dp)
+                    )
+            )
+            Icon(
+                imageVector = item.icon,
+                contentDescription = item.title,
+                tint = item.color,
+                modifier = Modifier.size(28.dp)
+            )
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = item.title,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Medium,
+            color = Color.Black.copy(alpha = 0.7f),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+@Composable
+fun SleekSearchBar(navController: NavController) {
+    var text by remember { mutableStateOf("") }
+
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp)
+            .height(56.dp)
+            .shadow(4.dp, RoundedCornerShape(16.dp), spotColor = Color.Black.copy(alpha=0.1f)),
+        shape = RoundedCornerShape(16.dp),
+        color = Color.White
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(Icons.Default.Search, contentDescription = "Search", tint = Color.Gray)
+            Spacer(modifier = Modifier.width(12.dp))
+            Box(modifier = Modifier.weight(1f)) {
+                if(text.isEmpty()) {
+                    Text("Try 'Rainwater Calculation'...", color = Color.Gray.copy(alpha=0.5f))
+                }
+                TextField(
+                    value = text,
+                    onValueChange = { text = it },
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent
+                    )
                 )
             }
         }
-        .addOnFailureListener {
-            callback(null, null, null)
+    }
+}
+
+// ================= FIXED BOUNCE CLICK =================
+
+fun Modifier.bounceClick(onClick: () -> Unit) = composed {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.9f else 1f,
+        label = "scale"
+    )
+
+    this
+        .graphicsLayer {
+            scaleX = scale
+            scaleY = scale
         }
+        .clickable(
+            interactionSource = interactionSource,
+            indication = null,
+            onClick = onClick
+        )
+}
+
+data class MenuItemData(val title: String, val icon: ImageVector, val color: Color, val onClick: () -> Unit)
+
+
+// ================= HELPER FUNCTIONS =================
+
+@SuppressLint("MissingPermission")
+private fun fetchLocationFull(context: Context, fusedClient: FusedLocationProviderClient, callback: (String?, Double?, Double?) -> Unit) {
+    fusedClient.lastLocation.addOnSuccessListener { location: Location? ->
+        if (location != null) {
+            callback(location.toAddress(context), location.latitude, location.longitude)
+        } else {
+            val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000).setMaxUpdates(1).build()
+            fusedClient.requestLocationUpdates(request, object : LocationCallback() {
+                override fun onLocationResult(result: LocationResult) {
+                    val loc = result.lastLocation
+                    callback(loc?.toAddress(context), loc?.latitude, loc?.longitude)
+                    fusedClient.removeLocationUpdates(this)
+                }
+            }, null)
+        }
+    }.addOnFailureListener { callback(null, null, null) }
 }
 
 private fun Location.toAddress(context: Context): String? {
     return try {
         val geocoder = Geocoder(context, Locale.getDefault())
         val addresses = geocoder.getFromLocation(latitude, longitude, 1)
-        if (!addresses.isNullOrEmpty()) {
-            val addr = addresses[0]
-            "${addr.featureName}, ${addr.locality}, ${addr.adminArea}, ${addr.countryName}"
-        } else null
+        if (!addresses.isNullOrEmpty()) "${addresses[0].locality}, ${addresses[0].adminArea}" else null
     } catch (e: Exception) {
-        e.printStackTrace()
-        null
+        e.printStackTrace(); null
     }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun MyTopAppBar(onMenuClick: () -> Unit = {}) {
-    TopAppBar(
-        colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White),
-        title = { Text("Jal Sanchay Mitra", style = MaterialTheme.typography.titleLarge, fontSize = 22.sp, fontWeight = FontWeight.Bold) },
-        navigationIcon = {
-            Image(
-                painter = painterResource(id = R.drawable.hand_drawn_water_drop_cartoon_illustration),
-                contentDescription = "Water Drop Logo",
-                modifier = Modifier
-                    .padding(start = 8.dp)
-                    .size(48.dp)
-            )
-        },
-        actions = {
-            IconButton(onClick = onMenuClick) {
-                Icon(
-                    imageVector = Icons.Filled.Menu,
-                    contentDescription = "Menu",
-                    modifier = Modifier.size(30.dp)
-                )
-            }
-        }
-    )
 }

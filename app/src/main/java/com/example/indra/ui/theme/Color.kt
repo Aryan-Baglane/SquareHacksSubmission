@@ -2,31 +2,26 @@ package com.example.indra.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Light theme colors
-val Purple40 = Color(0xFF6650a4)
-val PurpleGrey40 = Color(0xFF625b71)
-val Pink40 = Color(0xFF7D5260)
+// Light Theme Water Colors
+val WaterBlue = Color(0xFF0069C0) // A vibrant, medium blue
+val WaterBlueLight = Color(0xFFBBDEFB) // A lighter, soft blue
+val WaterBlueDark = Color(0xFF004080) // A deeper, more serious blue
 
-// Dark theme colors
-val Purple80 = Color(0xFFD0BCFF)
-val PurpleGrey80 = Color(0xFFCCC2DC)
-val Pink80 = Color(0xFFEFB8C8)
+// Dark Theme Water Colors
+val WaterBlueDarkTheme = Color(0xFF539EFF) // A brighter blue for dark backgrounds
+val WaterBlueDarkDarkTheme = Color(0xFF003D7E) // A very deep blue for contrast
 
-// Water-themed colors for light theme
-val WaterBlue = Color(0xFF2196F3)
-val WaterBlueDark = Color(0xFF1976D2)
-val WaterBlueLight = Color(0xFFBBDEFB)
-val OceanBlue = Color(0xFF2A76E8)
-val OceanBlueDark = Color(0xFF018786)
+// Light Theme Ocean Colors
+val OceanBlue = Color(0xFF00838F) // A teal-ish blue
+val OceanBlueLight = Color(0xFFB2EBF2) // A very light cyan
+val OceanBlueDark = Color(0xFF005662) // A dark cyan
 
-// Water-themed colors for dark theme
-val WaterBlueDarkTheme = Color(0xFF64B5F6)
-val WaterBlueDarkDarkTheme = Color(0xFF42A5F5)
-val WaterBlueLightDarkTheme = Color(0xFFE3F2FD)
-val OceanBlueDarkTheme = Color(0xFF1AA9F5)
-val OceanBlueDarkDarkTheme = Color(0xFF1F67FD)
+// Dark Theme Ocean Colors
+val OceanBlueDarkTheme = Color(0xFF4DD0E1) // A bright cyan for dark mode
 
-// Neutral colors
+// Other colors
 val LightGray = Color(0xFFF5F5F5)
-val DarkGray = Color(0xFF424242)
-val VeryDarkGray = Color(0xFF212121)
+val DarkGray = Color(0xFF212121)
+val VeryDarkGray = Color(0xFF121212)
+val Pink80 = Color(0xFFEFB8C8)
+val Pink40 = Color(0xFF7D5260)

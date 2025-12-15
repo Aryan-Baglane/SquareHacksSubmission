@@ -1,3 +1,4 @@
+
 package com.example.indra.screen
 
 import androidx.compose.foundation.background
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -50,6 +52,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.text.font.FontWeight
+
 // ... rest of your imports
 
 // Assuming you are using Jetpack Navigation, you'd typically pass NavController
@@ -86,7 +91,7 @@ fun ServicesScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Jal Sanchay Mitra") },
+                title = { Text("Jal Sanchay Mitra", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) { // Use the passed lambda
                         Icon(
@@ -94,15 +99,11 @@ fun ServicesScreen(
                             contentDescription = "Back"
                         )
                     }
-                }
-                // Optional: Add colors if you want to customize the TopAppBar appearance
-                // colors = TopAppBarDefaults.topAppBarColors(
-                //    containerColor = MaterialTheme.colorScheme.primary,
-                //    titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                //    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
-                // )
+                },
+                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
             )
         },
+        containerColor = MaterialTheme.colorScheme.surface,
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         bottomBar = {
             ChatInputBar(
@@ -173,6 +174,22 @@ fun ServicesScreen(
                     })
                 }
         ) {
+            Box(
+                modifier = Modifier
+                    .size(200.dp)
+                    .align(Alignment.TopEnd)
+                    .offset(x = 50.dp, y = (-50).dp)
+                    .alpha(0.1f)
+                    .background(MaterialTheme.colorScheme.primary, CircleShape)
+            )
+            Box(
+                modifier = Modifier
+                    .size(150.dp)
+                    .align(Alignment.BottomStart)
+                    .offset(x = (-60).dp, y = 40.dp)
+                    .alpha(0.1f)
+                    .background(MaterialTheme.colorScheme.primary, CircleShape)
+            )
             LazyColumn(
                 state = listState,
                 modifier = Modifier

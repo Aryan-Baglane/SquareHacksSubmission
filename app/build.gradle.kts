@@ -3,7 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.google.gms.google.services)
-    id("com.mappls.services.android")
+
 
 
 
@@ -79,12 +79,20 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.7.0")
 
 
-    implementation(platform("com.mappls.sdk:mappls-bom:2.0.0"))
+
     implementation("androidx.constraintlayout:constraintlayout-compose:1.1.0")
 
 
     // Map dependencies (no version needed since BoM is used)
-    implementation("com.mappls.sdk:mappls-android-sdk")
+
+
+
+
+    implementation("com.mapbox.maps:android:10.15.0")// check latest version
+
+
+// Annotations Plugin (for adding markers)
+
 
 
 

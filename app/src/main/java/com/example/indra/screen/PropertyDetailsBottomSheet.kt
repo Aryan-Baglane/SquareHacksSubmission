@@ -2,227 +2,282 @@ package com.example.indra.screen
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.WaterDrop
-import androidx.compose.material.icons.filled.Build
-import androidx.compose.material.icons.filled.CurrencyRupee
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.indra.data.Property
 import java.text.SimpleDateFormat
 import java.util.*
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PropertyDetailsBottomSheet(
     property: Property,
     onDismiss: () -> Unit
 ) {
+    // Determine color based on score
+    val scoreColor = when {
+        property.feasibilityScore >= 70 -> Color(0xFF4CAF50) // Green
+        property.feasibilityScore >= 40 -> Color(0xFFFF9800) // Orange
+        else -> Color(0xFFE53935) // Red
+    }
+
     Box(
-        modifier = Modifier
-            .fillMaxSize()
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.BottomCenter
     ) {
-        // Background overlay
+        // 1. Dark Overlay (Click to dismiss)
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .alpha(0.5f)
+                .background(Color.Black.copy(alpha = 0.4f))
                 .clickable { onDismiss() }
         )
-        
-        // Bottom sheet content
+
+        // 2. Bottom Sheet Content
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(max = 600.dp)
-                .align(Alignment.BottomCenter)
-                .padding(16.dp),
-            shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                .heightIn(max = 650.dp) // Limit height
+                .clickable(enabled = false) {}, // Prevent clicks from passing through
+            shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(16.dp)
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
-                    .padding(20.dp)
             ) {
-                // Header
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                // --- Header & Close Button ---
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp)
                 ) {
-                    Text(
-                        text = "Property Details",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
+                    Column {
+                        Text(
+                            text = "Property Details",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = Color.Gray
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = property.name,
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Black.copy(alpha = 0.8f)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.LocationOn,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = property.address,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color.Gray
+                            )
+                        }
+                    }
+
+                    // Close Button
                     IconButton(
-                        onClick = onDismiss
+                        onClick = onDismiss,
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .background(Color(0xFFF5F5F5), CircleShape)
+                            .size(32.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Close,
+                            Icons.Default.Close,
                             contentDescription = "Close",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            modifier = Modifier.size(16.dp),
+                            tint = Color.Black
                         )
                     }
                 }
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                // Property name and location
-                Text(
-                    text = property.name,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                
-                Spacer(modifier = Modifier.height(8.dp))
-                
+
+                Divider(color = Color(0xFFF5F5F5), thickness = 2.dp)
+
+                // --- Score Section ---
                 Row(
-                    verticalAlignment = Alignment.CenterVertically
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.LocationOn,
-                        contentDescription = "Location",
-                        tint = MaterialTheme.colorScheme.secondary,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = property.address,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                // Feasibility score
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = "Feasibility Score",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = if (property.feasibilityScore >= 70) "Excellent Potential" else "Moderate Potential",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = scoreColor,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+
+                    // Circular Progress Indicator
+                    Box(contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(
+                            progress = { 1f },
+                            modifier = Modifier.size(70.dp),
+                            color = Color(0xFFF0F0F0),
+                            strokeWidth = 6.dp,
+                        )
+                        CircularProgressIndicator(
+                            progress = { property.feasibilityScore / 100f },
+                            modifier = Modifier.size(70.dp),
+                            color = scoreColor,
+                            strokeWidth = 6.dp,
+                            strokeCap = StrokeCap.Round,
                         )
                         Text(
                             text = "${property.feasibilityScore.toInt()}%",
-                            style = MaterialTheme.typography.displayMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                // Key metrics
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    MetricItem(
-                        icon = Icons.Default.WaterDrop,
-                        label = "Annual Potential",
-                        value = "${property.annualHarvestingPotentialLiters / 1000} kL"
-                    )
-                    MetricItem(
-                        icon = Icons.Default.CurrencyRupee,
-                        label = "Estimated Cost",
-                        value = "₹${property.estimatedCostInr}"
-                    )
-                    MetricItem(
-                        icon = Icons.Default.Build,
-                        label = "Solution",
-                        value = property.recommendedSolution
-                    )
-                }
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                // Property details
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text(
-                            text = "Property Information",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = scoreColor
                         )
-                        
-                        DetailRow("Property Type", property.propertyType)
-                        DetailRow("Roof Area", "${property.roofArea} sq. m")
-                        DetailRow("Open Space", "${property.openSpace} sq. m")
-                        DetailRow("Dwellers", property.dwellers.toString())
-                        DetailRow("Last Assessment", formatDate(property.lastAssessmentDate))
                     }
                 }
+
+                // --- Quick Stats Row ---
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    ModernMetricItem(
+                        icon = Icons.Outlined.WaterDrop,
+                        label = "Potential",
+                        value = "${property.annualHarvestingPotentialLiters / 1000} kL",
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    ModernMetricItem(
+                        icon = Icons.Outlined.CurrencyRupee,
+                        label = "Est. Cost",
+                        value = "₹${property.estimatedCostInr/1000}k",
+                        color = Color(0xFF795548)
+                    )
+                    ModernMetricItem(
+                        icon = Icons.Outlined.Build,
+                        label = "Solution",
+                        value = property.recommendedSolution.take(8) + "...", // Truncate if long
+                        color = Color(0xFF607D8B)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // --- Detailed Info Card ---
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = 8.dp),
+                    color = Color(0xFFFAFAFA),
+                    shape = RoundedCornerShape(20.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Text(
+                            text = "Specifications",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Gray
+                        )
+
+                        ModernDetailRow("Property Type", property.propertyType)
+                        Divider(color = Color.LightGray.copy(alpha = 0.2f))
+                        ModernDetailRow("Roof Area", "${property.roofArea} m²")
+                        Divider(color = Color.LightGray.copy(alpha = 0.2f))
+                        ModernDetailRow("Open Space", "${property.openSpace} m²")
+                        Divider(color = Color.LightGray.copy(alpha = 0.2f))
+                        ModernDetailRow("Occupants", "${property.dwellers} People")
+                        Divider(color = Color.LightGray.copy(alpha = 0.2f))
+                        ModernDetailRow("Date", formatDate(property.lastAssessmentDate))
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(40.dp))
             }
         }
     }
 }
 
 @Composable
-private fun MetricItem(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+private fun ModernMetricItem(
+    icon: ImageVector,
     label: String,
-    value: String
+    value: String,
+    color: Color
 ) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+    Surface(
+        color = color.copy(alpha = 0.08f),
+        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier.width(100.dp)
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = label,
-            tint = MaterialTheme.colorScheme.secondary,
-            modifier = Modifier.size(20.dp)
-        )
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodySmall,
-            fontWeight = FontWeight.Medium,
-            color = MaterialTheme.colorScheme.onSurface
-        )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(vertical = 12.dp, horizontal = 4.dp)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = label,
+                tint = color,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = value,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = Color.Black.copy(alpha = 0.8f),
+                fontSize = 13.sp
+            )
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = Color.Gray,
+                fontSize = 11.sp
+            )
+        }
     }
 }
 
 @Composable
-private fun DetailRow(label: String, value: String) {
+private fun ModernDetailRow(label: String, value: String) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
@@ -230,13 +285,13 @@ private fun DetailRow(label: String, value: String) {
         Text(
             text = label,
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = Color.Gray
         )
         Text(
             text = value,
             style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Medium,
-            color = MaterialTheme.colorScheme.onSurface
+            fontWeight = FontWeight.SemiBold,
+            color = Color.Black.copy(alpha = 0.8f)
         )
     }
 }
