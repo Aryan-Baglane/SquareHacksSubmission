@@ -1,27 +1,25 @@
 package com.example.indra.data
 
+/**
+ * Updated UserProfile to match the Firebase Realtime Database structure.
+ * This prevents "No setter/field" warnings in logs.
+ */
 data class UserProfile(
     val uid: String = "",
     val displayName: String? = null,
     val photoUrl: String? = null,
-    // Onboarding fields
     val name: String = "",
     val onboardingCompleted: Boolean = false,
     val numDwellers: Int = 0,
     val roofAreaSqm: Double = 0.0,
     val openSpaceSqm: Double = 0.0,
-    val roofType: String = "Concrete"
+    val roofType: String = "Concrete",
+
+    // Add these fields to match the Firebase keys found in your logs
+    val reports: Map<String, Report>? = null,
+    val graminProfile: GraminProfile? = null,
+    val properties: Map<String, Property>? = null
 ) {
-    // Default constructor for Firebase
-    constructor() : this(
-        uid = "",
-        displayName = null,
-        photoUrl = null,
-        name = "",
-        onboardingCompleted = false,
-        numDwellers = 0,
-        roofAreaSqm = 0.0,
-        openSpaceSqm = 0.0,
-        roofType = "Concrete"
-    )
+    // Primary default constructor for Firebase
+    constructor() : this(uid = "")
 }

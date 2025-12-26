@@ -1,6 +1,7 @@
 package com.example.indra.db
 
 
+import com.example.indra.data.GraminProfile
 import kotlinx.coroutines.tasks.await
 import com.example.indra.data.UserProfile
 import com.example.indra.data.Property
@@ -22,6 +23,10 @@ interface DatabaseApi {
     suspend fun updateReport(uid: String, report: Report)
     suspend fun deleteReport(uid: String, reportId: String)
     suspend fun getReport(uid: String, reportId: String): Report?
+
+    suspend fun getGraminProfile(uid: String): GraminProfile?
+    suspend fun setGraminProfile(profile: GraminProfile)
+
 }
 
 private class FirebaseDatabaseApi : DatabaseApi {
@@ -89,6 +94,21 @@ private class FirebaseDatabaseApi : DatabaseApi {
         val snap = db.child("users").child(uid).child("reports").child(reportId).get().await()
         return snap.getValue(Report::class.java)
     }
+
+    override suspend fun getGraminProfile(uid: String): GraminProfile? {
+        val snap = db.child("users").child(uid).child("graminProfile").get().await()
+        return snap.getValue(GraminProfile::class.java)
+    }
+
+    override suspend fun setGraminProfile(profile: GraminProfile) {
+        db.child("users")
+            .child(profile.uid)
+            .child("graminProfile")
+            .setValue(profile)
+            .await()
+    }
+
+
 }
 
 object DatabaseProvider {

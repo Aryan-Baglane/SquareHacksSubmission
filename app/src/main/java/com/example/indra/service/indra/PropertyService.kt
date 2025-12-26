@@ -1,12 +1,12 @@
-package com.example.indra.service
+package com.example.indra.service.indra
 
 import com.example.indra.auth.AuthApi
 import com.example.indra.data.AssessmentInput
 import com.example.indra.data.FeasibilityCalculator
 import com.example.indra.data.Property
 import com.example.indra.db.DatabaseProvider
-import kotlin.random.Random
 import kotlinx.datetime.Clock
+import kotlin.random.Random
 
 object PropertyService {
 
@@ -43,7 +43,7 @@ object PropertyService {
 
         // Create property
         val property = Property(
-            id = "PROP-${Random.nextInt(1000, 9999)}",
+            id = "PROP-${Random.Default.nextInt(1000, 9999)}",
             name = name,
             address = address,
             latitude = latitude,

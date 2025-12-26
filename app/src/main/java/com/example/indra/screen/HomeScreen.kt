@@ -2,9 +2,6 @@ package com.example.indra.screen
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.content.Context
-import android.location.Geocoder
-import android.location.Location
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
@@ -29,6 +26,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
@@ -52,17 +50,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.indra.auth.AuthApi
 import com.example.indra.data.AuthUser
 import com.example.indra.db.DatabaseProvider
+import com.example.indra.location.LocationViewModel
 import com.google.android.gms.location.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.util.*
 import kotlin.math.PI
 import kotlin.math.sin
+import kotlin.math.max
 
 @SuppressLint("MissingPermission")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -79,14 +79,14 @@ fun DashboardScreen(
     onHelpClick: () -> Unit,
     onProfileClick: () -> Unit,
     onMyPropertiesClick: () -> Unit,
-    onMyHouseClick: () -> Unit
+    onMyHouseClick: () -> Unit,
+    onVendorClick: () -> Unit,
+    locationViewModel: LocationViewModel = viewModel()
 ) {
     // ---------- STATE ----------
     var user by remember { mutableStateOf<AuthUser?>(null) }
     var name by remember { mutableStateOf("") }
-    var currentLocation by remember { mutableStateOf("Locating...") }
-    var latitude by remember { mutableStateOf<Double?>(null) }
-    var longitude by remember { mutableStateOf<Double?>(null) }
+    val locationData by locationViewModel.locationData.observeAsState()
     var feasibilityScore by remember { mutableStateOf<Double?>(null) }
     var potentialRunoff by remember { mutableStateOf<Double?>(null) }
     var isLoading by remember { mutableStateOf(false) }
@@ -112,11 +112,7 @@ fun DashboardScreen(
         if (perms[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
             perms[Manifest.permission.ACCESS_COARSE_LOCATION] == true
         ) {
-            fetchLocationFull(context, fusedClient) { addr, lat, lon ->
-                currentLocation = addr ?: "Unknown"
-                latitude = lat
-                longitude = lon
-            }
+            locationViewModel.fetchLocation(context, fusedClient)
         }
     }
 
@@ -127,8 +123,10 @@ fun DashboardScreen(
     }
 
     // Run Logic
-    LaunchedEffect(latitude, longitude) {
-        if (latitude != null && longitude != null) {
+    LaunchedEffect(locationData) {
+        val lat = locationData?.latitude
+        val lon = locationData?.longitude
+        if (lat != null && lon != null) {
             isLoading = true
             scope.launch {
                 val profile = DatabaseProvider.database().getUserProfile(user?.uid ?: return@launch)
@@ -137,8 +135,8 @@ fun DashboardScreen(
                     repo.performAssessment(
                         com.example.indra.data.AssessmentRequest(
                             name = profile.displayName ?: "Home",
-                            latitude = latitude!!,
-                            longitude = longitude!!,
+                            latitude = lat,
+                            longitude = lon,
                             numDwellers = profile.numDwellers,
                             roofAreaSqm = profile.roofAreaSqm,
                             openSpaceSqm = profile.openSpaceSqm,
@@ -153,6 +151,9 @@ fun DashboardScreen(
             }
         }
     }
+
+    // Dynamic Header Color based on Feasibility (Defaults to Primary if null/loading)
+    val scoreColor = feasibilityScore?.let { getScoreColor(it) } ?: MaterialTheme.colorScheme.primary
 
     // ---------- UI ----------
     val headerHeight = 240.dp
@@ -171,8 +172,9 @@ fun DashboardScreen(
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
-                            MaterialTheme.colorScheme.primary,
-                            Color(0xFF007EC1) // A slightly brighter blue
+                            // Use the score-derived color for a unified look
+                            scoreColor,
+                            scoreColor.darken(0.2f)
                         )
                     ),
                     shape = RoundedCornerShape(bottomStart = 40.dp, bottomEnd = 40.dp)
@@ -203,7 +205,7 @@ fun DashboardScreen(
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = currentLocation,
+                                text = locationData?.address ?: "Locating...",
                                 color = Color.White.copy(alpha = 0.8f),
                                 style = MaterialTheme.typography.bodySmall,
                                 maxLines = 1,
@@ -287,10 +289,56 @@ fun DashboardScreen(
             AnimatedGridMenu(
                 onStartAssessment, onChatClick, onReportClick, onTipClick,
                 onCommunityClick, onSettingsClick, onHistoryClick, onHelpClick,
-                onProfileClick, onMyPropertiesClick, onMyHouseClick
+                onProfileClick, onMyPropertiesClick, onMyHouseClick, onVendorClick
             )
         }
     }
+}
+
+/* ================= UTILITY FUNCTIONS ================= */
+
+/**
+ * Maps a score (0.0 to 100.0) to a color gradient: Red -> Yellow -> Green.
+ * @param score The feasibility score (0.0 to 100.0).
+ * @return The corresponding [Color].
+ */
+@Composable
+fun getScoreColor(score: Double): Color {
+    // Clamp score between 0 and 100
+    val clampedScore = score.toFloat().coerceIn(0f, 100f)
+
+    // Normalize the score to a 0.0 to 1.0 range
+    val normalized = clampedScore / 100f
+
+    // Define color stops (example: Red at 0, Yellow at 50, Green at 100)
+    val red = Color(0xFFF44336) // Low Score
+    val yellow = Color(0xFFFFC107) // Moderate Score
+    val green = Color(0xFF4CAF50) // High Score
+
+    return when {
+        normalized <= 0.5f -> lerp(red, yellow, normalized * 2f)
+        else -> lerp(yellow, green, (normalized - 0.5f) * 2f)
+    }
+}
+
+/**
+ * Linear interpolation between two colors.
+ */
+private fun lerp(start: Color, stop: Color, fraction: Float): Color {
+    return androidx.compose.ui.graphics.lerp(start, stop, fraction)
+}
+
+
+/**
+ * Darkens a color by a given factor (0.0 to 1.0).
+ */
+private fun Color.darken(factor: Float): Color {
+    return Color(
+        red = max(0f, red - factor).coerceIn(0f, 1f),
+        green = max(0f, green - factor).coerceIn(0f, 1f),
+        blue = max(0f, blue - factor).coerceIn(0f, 1f),
+        alpha = alpha
+    )
 }
 
 /* ================= COMPOSABLES ================= */
@@ -301,7 +349,8 @@ fun WaterWaveCard(
     loading: Boolean,
     potentialRunoff: Double?
 ) {
-    // Target percentage (0.0 to 1.0)
+    // Dynamic Color based on Score
+    val dynamicColor = score?.let { getScoreColor(it) } ?: MaterialTheme.colorScheme.primary
     val targetProgress = (score?.toFloat() ?: 0f) / 100f
 
     // The actual progress shown in the wave
@@ -313,7 +362,6 @@ fun WaterWaveCard(
     LaunchedEffect(loading, score) {
         if (!loading && score != null) {
             currentProgress = 0f
-            // --- WAIT TIME ---
             // Gives the app a moment to "breathe" before starting the show
             delay(800)
             startPourAnimation = true
@@ -327,7 +375,8 @@ fun WaterWaveCard(
             .padding(horizontal = 20.dp)
             .fillMaxWidth()
             .height(240.dp)
-            .shadow(16.dp, RoundedCornerShape(32.dp), spotColor = MaterialTheme.colorScheme.primary.copy(alpha=0.3f)),
+            // Use the dynamic color for the shadow spot
+            .shadow(16.dp, RoundedCornerShape(32.dp), spotColor = dynamicColor.copy(alpha=0.3f)),
         shape = RoundedCornerShape(32.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
@@ -358,7 +407,8 @@ fun WaterWaveCard(
                         modifier = Modifier
                             .size(130.dp)
                             .clip(CircleShape),
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                        // Use the dynamic color for the wave
+                        color = dynamicColor.copy(alpha = 0.8f),
                         isMoving = true
                     )
 
@@ -367,7 +417,8 @@ fun WaterWaveCard(
                             text = if (loading) "--" else "${(currentProgress * 100).toInt()}%",
                             fontSize = 32.sp,
                             fontWeight = FontWeight.ExtraBold,
-                            color = if (currentProgress > 0.3f) Color.Black else MaterialTheme.colorScheme.primary,
+                            // Use the dynamic color for the text if the wave hasn't covered it much
+                            color = if (currentProgress > 0.3f) Color.Black else dynamicColor,
                             modifier = Modifier.shadow(0.dp)
                         )
                     }
@@ -394,12 +445,14 @@ fun WaterWaveCard(
                         },
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
+                        // Use the dynamic color for the headline text
+                        color = dynamicColor
                     )
                     Spacer(modifier = Modifier.height(12.dp))
                     if (potentialRunoff != null && potentialRunoff > 0) {
+                        // Use dynamic color for the badge accent
                         Surface(
-                            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
+                            color = dynamicColor.copy(alpha = 0.2f),
                             shape = RoundedCornerShape(12.dp)
                         ) {
                             Row(
@@ -410,14 +463,14 @@ fun WaterWaveCard(
                                     Icons.Outlined.WaterDrop,
                                     contentDescription = null,
                                     modifier = Modifier.size(14.dp),
-                                    tint = MaterialTheme.colorScheme.primary
+                                    tint = dynamicColor // Dynamic icon color
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
                                     text = "${potentialRunoff.toInt()}L / yr",
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                                    color = dynamicColor.darken(0.1f) // Darker dynamic color for contrast
                                 )
                             }
                         }
@@ -430,7 +483,9 @@ fun WaterWaveCard(
                 PouringGlassAnimation(
                     targetFill = targetProgress,
                     onFillUpdate = { progress -> currentProgress = progress },
-                    onFinished = { startPourAnimation = false }
+                    onFinished = { startPourAnimation = false },
+                    // Pass the dynamic color to the pouring animation
+                    waterColor = dynamicColor
                 )
             }
         }
@@ -441,7 +496,8 @@ fun WaterWaveCard(
 fun PouringGlassAnimation(
     targetFill: Float,
     onFillUpdate: (Float) -> Unit,
-    onFinished: () -> Unit
+    onFinished: () -> Unit,
+    waterColor: Color // New parameter
 ) {
     // 0f = Offscreen Right, 1f = Pouring Position
     val positionProgress = remember { Animatable(0f) }
@@ -449,8 +505,6 @@ fun PouringGlassAnimation(
     val glassTilt = remember { Animatable(0f) }
     val streamHeight = remember { Animatable(0f) }
     val fillProgress = remember { Animatable(0f) }
-
-    val waterColor = MaterialTheme.colorScheme.primary
 
     LaunchedEffect(Unit) {
         // 1. Enter: Slide in smoothly with a slight ease-out
@@ -526,7 +580,7 @@ fun PouringGlassAnimation(
             val streamWidth = 6.dp.toPx() * (0.8f + 0.2f * streamHeight.value)
 
             drawLine(
-                color = waterColor,
+                color = waterColor, // Use dynamic color
                 start = streamStart,
                 end = Offset(
                     streamStart.x,
@@ -556,7 +610,7 @@ fun PouringGlassAnimation(
                 val waterLevelY = currentY + glassHeight * (0.2f + (0.8f * drainFactor))
 
                 drawRect(
-                    color = waterColor.copy(alpha = 0.6f),
+                    color = waterColor.copy(alpha = 0.6f), // Use dynamic color
                     topLeft = Offset(currentX - glassWidth, waterLevelY),
                     size = Size(glassWidth * 2, glassHeight)
                 )
@@ -632,6 +686,8 @@ fun WaveLoadingIndicator(
     }
 }
 
+// ... (Rest of the composables and helper functions remain the same)
+
 @Composable
 fun AnimatedGridMenu(
     onStartAssessment: () -> Unit,
@@ -644,7 +700,8 @@ fun AnimatedGridMenu(
     onHelpClick: () -> Unit,
     onProfileClick: () -> Unit,
     onMyPropertiesClick: () -> Unit,
-    onMyHouseClick: () -> Unit
+    onMyHouseClick: () -> Unit,
+    onVendorClick: () -> Unit
 ) {
     val menuItems = listOf(
         MenuItemData("New Scan", Icons.Outlined.AddCircleOutline, Color(0xFF2196F3), onStartAssessment),
@@ -658,6 +715,7 @@ fun AnimatedGridMenu(
         MenuItemData("Profile", Icons.Outlined.Person, Color(0xFF3F51B5), onProfileClick),
         MenuItemData("Settings", Icons.Outlined.Settings, Color(0xFF607D8B), onSettingsClick),
         MenuItemData("Help", Icons.Outlined.HelpOutline, Color(0xFFF44336), onHelpClick),
+        MenuItemData("Vendors", Icons.Outlined.Business, Color(0xFF03A9F4), onVendorClick)
     )
 
     LazyVerticalGrid(
@@ -752,6 +810,7 @@ fun SleekSearchBar(navController: NavController) {
                 if(text.isEmpty()) {
                     Text("Try 'Rainwater Calculation'...", color = Color.Gray.copy(alpha=0.5f))
                 }
+                // Using OutlinedTextField for a consistent look without the default underline
                 TextField(
                     value = text,
                     onValueChange = { text = it },
@@ -759,7 +818,8 @@ fun SleekSearchBar(navController: NavController) {
                         focusedContainerColor = Color.Transparent,
                         unfocusedContainerColor = Color.Transparent,
                         focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent
+                        unfocusedIndicatorColor = Color.Transparent,
+                        cursorColor = MaterialTheme.colorScheme.primary
                     )
                 )
             }
@@ -791,34 +851,3 @@ fun Modifier.bounceClick(onClick: () -> Unit) = composed {
 }
 
 data class MenuItemData(val title: String, val icon: ImageVector, val color: Color, val onClick: () -> Unit)
-
-
-// ================= HELPER FUNCTIONS =================
-
-@SuppressLint("MissingPermission")
-private fun fetchLocationFull(context: Context, fusedClient: FusedLocationProviderClient, callback: (String?, Double?, Double?) -> Unit) {
-    fusedClient.lastLocation.addOnSuccessListener { location: Location? ->
-        if (location != null) {
-            callback(location.toAddress(context), location.latitude, location.longitude)
-        } else {
-            val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000).setMaxUpdates(1).build()
-            fusedClient.requestLocationUpdates(request, object : LocationCallback() {
-                override fun onLocationResult(result: LocationResult) {
-                    val loc = result.lastLocation
-                    callback(loc?.toAddress(context), loc?.latitude, loc?.longitude)
-                    fusedClient.removeLocationUpdates(this)
-                }
-            }, null)
-        }
-    }.addOnFailureListener { callback(null, null, null) }
-}
-
-private fun Location.toAddress(context: Context): String? {
-    return try {
-        val geocoder = Geocoder(context, Locale.getDefault())
-        val addresses = geocoder.getFromLocation(latitude, longitude, 1)
-        if (!addresses.isNullOrEmpty()) "${addresses[0].locality}, ${addresses[0].adminArea}" else null
-    } catch (e: Exception) {
-        e.printStackTrace(); null
-    }
-}

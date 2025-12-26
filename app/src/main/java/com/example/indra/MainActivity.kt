@@ -9,18 +9,24 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -28,10 +34,15 @@ import androidx.navigation.compose.rememberNavController
 import com.example.indra.auth.AuthApi
 import com.example.indra.data.Report
 import com.example.indra.i18n.LocaleManager
+import com.example.indra.marketModel.MarketScreen
 import com.example.indra.navigation.AppRoutes
 import com.example.indra.db.DatabaseProvider
+
 import com.example.indra.platform.PlatformSignIn
 import com.example.indra.screen.*
+import com.example.indra.screen.IndraGraminScreen.GraminSettingsScreen
+import com.example.indra.screen.IndraGraminScreen.IndraGraminEntryScreen
+import com.example.indra.screen.VendorsScreen
 import com.example.indra.ui.theme.INDRATheme
 import com.example.indra.ui.theme.ThemeManager
 import kotlinx.coroutines.CoroutineScope
@@ -77,22 +88,105 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+// ================= MODIFIED MyTopAppBar with Animations =================
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MyTopAppBar() {
+fun MyTopAppBar(
+    selectedScreen: String,
+    onScreenSelected: (String) -> Unit
+) {
+    // Colors matching the dashboard's light/dark mode surfaces
+    val containerColor = MaterialTheme.colorScheme.surface
+    val activeColor = MaterialTheme.colorScheme.primary // Use primary for the active segment color
+    val inactiveColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+
     TopAppBar(
-        colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
+        colors = TopAppBarDefaults.topAppBarColors(containerColor = containerColor),
         title = {
-            Text(
-                "INDRA",
-                style = MaterialTheme.typography.titleLarge,
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
+            // Container for the segmented control
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 48.dp) // Constrain size
+                    .height(48.dp)
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(24.dp)) // Light background tint
+                    .border(1.dp, Color.LightGray.copy(alpha = 0.5f), RoundedCornerShape(24.dp))
+                    .padding(4.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // INDRA Button
+                SegmentButtonInAppBar(
+                    text = "INDRA",
+                    isSelected = selectedScreen == "INDRA",
+                    activeColor = activeColor,
+                    inactiveColor = inactiveColor,
+                    onClick = { onScreenSelected("INDRA") }
+                )
+
+                // INDRA-GARMIN Button
+                SegmentButtonInAppBar(
+                    text = "INDRA-GARMIN",
+                    isSelected = selectedScreen == "INDRA-GARMIN",
+                    activeColor = activeColor,
+                    inactiveColor = inactiveColor,
+                    onClick = { onScreenSelected("INDRA-GARMIN") }
+                )
+            }
         }
     )
 }
+
+@Composable
+private fun RowScope.SegmentButtonInAppBar(
+    text: String,
+    isSelected: Boolean,
+    activeColor: Color,
+    inactiveColor: Color,
+    onClick: () -> Unit
+) {
+    // Animate Background Color
+    val targetBackgroundColor = if (isSelected) activeColor else Color.Transparent
+    val backgroundColor by animateColorAsState(
+        targetValue = targetBackgroundColor,
+        animationSpec = tween(300),
+        label = "segmentBgAnim"
+    )
+
+    // Animate Text Color
+    val targetTextColor = if (isSelected) Color.White else inactiveColor
+    val textColor by animateColorAsState(
+        targetValue = targetTextColor,
+        animationSpec = tween(300),
+        label = "segmentTextAnim"
+    )
+
+    val cornerRadius = 20.dp
+
+    Box(
+        modifier = Modifier
+            .weight(1f)
+            .height(40.dp)
+            .clip(RoundedCornerShape(cornerRadius))
+            // Apply the animated background color
+            .background(backgroundColor, RoundedCornerShape(cornerRadius))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 8.dp)
+            .animateContentSize(), // Ensures size changes (if any) are animated
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = text,
+            color = textColor, // Use the animated text color
+            style = MaterialTheme.typography.titleSmall, // Smaller font to fit
+            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+        )
+    }
+}
+
+// ================= APP COMPOSABLE (Logic remains the same) =================
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -102,6 +196,8 @@ fun App(onGoogleSignIn: () -> Unit) {
         var isSignedIn by remember { mutableStateOf(false) }
         var playLoginAnim by remember { mutableStateOf(false) }
         var needsOnboarding by remember { mutableStateOf(false) }
+        // State to control which version of the dashboard is shown
+        var selectedScreen by remember { mutableStateOf("INDRA") }
 
         val navController = rememberNavController()
         val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -171,7 +267,10 @@ fun App(onGoogleSignIn: () -> Unit) {
         Scaffold(
             topBar = {
                 if (isDashboard) {
-                    MyTopAppBar()
+                    MyTopAppBar(
+                        selectedScreen = selectedScreen,
+                        onScreenSelected = { selectedScreen = it }
+                    )
                 }
             },
             bottomBar = {
@@ -187,9 +286,12 @@ fun App(onGoogleSignIn: () -> Unit) {
                 }
             }
         ) { padding ->
+            // Use Modifier.padding(padding) only when TopAppBar is present/needed for padding
+            // Since MyTopAppBar is always present when isDashboard is true, this is correct.
             val modifier = if (isDashboard) Modifier.padding(padding) else Modifier
+
             NavHost(navController = navController, startDestination = AppRoutes.DASHBOARD, modifier = modifier) {
-                 composable(AppRoutes.ONBOARDING) {
+                composable(AppRoutes.ONBOARDING) {
                     OnboardingScreen(onCompleted = {
                         needsOnboarding = false
                         navController.navigate(AppRoutes.DASHBOARD) {
@@ -198,20 +300,27 @@ fun App(onGoogleSignIn: () -> Unit) {
                     })
                 }
                 composable(AppRoutes.DASHBOARD) {
-                    DashboardScreen(
-                        navController = navController,
-                        onStartAssessment = { navController.navigate(AppRoutes.ASSESS) },
-                        onChatClick = { navController.navigate(AppRoutes.SERVICES) },
-                        onReportClick = { navController.navigate(AppRoutes.REPORT) },
-                        onTipClick = { navController.navigate(AppRoutes.LEARN_HUB) },
-                        onCommunityClick = { navController.navigate(AppRoutes.COMMUNITY) },
-                        onSettingsClick = { navController.navigate(AppRoutes.SETTINGS) },
-                        onHistoryClick = { navController.navigate(AppRoutes.HISTORY) },
-                        onHelpClick = { navController.navigate(AppRoutes.HELP) },
-                        onProfileClick = { navController.navigate(AppRoutes.PROFILE) },
-                        onMyPropertiesClick = { navController.navigate(AppRoutes.MY_PROPERTIES) },
-                        onMyHouseClick = { navController.navigate(AppRoutes.MY_HOUSE) }
-                    )
+                    when (selectedScreen) {
+                        "INDRA" -> DashboardScreen(
+                            navController = navController,
+                            onStartAssessment = { navController.navigate(AppRoutes.ASSESS) },
+                            onChatClick = { navController.navigate(AppRoutes.SERVICES) },
+                            onReportClick = { navController.navigate(AppRoutes.REPORT) },
+                            onTipClick = { navController.navigate(AppRoutes.LEARN_HUB) },
+                            onCommunityClick = { navController.navigate(AppRoutes.COMMUNITY) },
+                            onSettingsClick = { navController.navigate(AppRoutes.SETTINGS) },
+                            onHistoryClick = { navController.navigate(AppRoutes.HISTORY) },
+                            onHelpClick = { navController.navigate(AppRoutes.HELP) },
+                            onProfileClick = { navController.navigate(AppRoutes.PROFILE) },
+                            onMyPropertiesClick = { navController.navigate(AppRoutes.MY_PROPERTIES) },
+                            onMyHouseClick = { navController.navigate(AppRoutes.MY_HOUSE) },
+                            onVendorClick = { navController.navigate(AppRoutes.VENDORS) }
+                        )
+                        "INDRA-GARMIN" -> IndraGraminEntryScreen(navController)
+                    }
+                }
+                composable(AppRoutes.VENDORS) {
+                    VendorsScreen(onBackClick = { navController.popBackStack() })
                 }
                 composable(AppRoutes.ASSESS) {
                     AssessmentView(
@@ -221,6 +330,15 @@ fun App(onGoogleSignIn: () -> Unit) {
                             navController.navigate(AppRoutes.DETAILED_REPORT)
                         }
                     )
+                }
+                composable(AppRoutes.CROP_SUGGESTION) {
+                    CropSuggestionScreen()
+                }
+                composable(AppRoutes.MARKET) {
+                    MarketScreen()
+                }
+                composable(AppRoutes.WATER_MANAGEMENT) {
+                    WaterManagementScreen()
                 }
                 composable(AppRoutes.REPORT) {
                     reportData?.let { report ->
@@ -232,7 +350,7 @@ fun App(onGoogleSignIn: () -> Unit) {
                     }
                 }
                 composable(AppRoutes.DETAILED_REPORT) {
-                     reportData?.let { report ->
+                    reportData?.let { report ->
                         DetailedReportView(
                             report = report,
                             onBack = { navController.popBackStack() },
@@ -283,6 +401,13 @@ fun App(onGoogleSignIn: () -> Unit) {
                     mapboxAccessToken = "pk.eyJ1IjoiYXJ5YW5iYWdsYW5lIiwiYSI6ImNtaDRpZWoxaTB4MjcyanI1c3BoZDVyY3AifQ.SWnkEA01n_kcFTSfUaW2uA"
                 ) }
                 composable(AppRoutes.MY_HOUSE){ MyHouseScreen() }
+
+                composable(AppRoutes.GRAMIN_SETTINGS) {
+                    GraminSettingsScreen(
+                        onNavigateUp = { navController.navigateUp() }
+                    )
+                }
+
             }
         }
     }

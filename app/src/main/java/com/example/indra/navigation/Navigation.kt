@@ -1,10 +1,6 @@
 
 package com.example.indra.navigation
 
-
-
-
-
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.Composable
@@ -17,11 +13,12 @@ import com.example.indra.screen.AssessmentView
 import com.example.indra.screen.CommunityScreen
 import com.example.indra.screen.DashboardScreen
 import com.example.indra.screen.HistoryView
+import com.example.indra.screen.IndraGraminScreen.GraminSettingsScreen
+import com.example.indra.screen.VendorsScreen
 import com.example.indra.screen.LearnHubView
 import com.example.indra.screen.MyHouseScreen
 import com.example.indra.screen.MyPropertiesScreen
 import com.example.indra.screen.ProfileScreen
-import com.example.indra.screen.ReportCard
 import com.example.indra.screen.ReportView
 import com.example.indra.screen.ServicesScreen
 import com.example.indra.screen.SettingsScreen
@@ -49,6 +46,11 @@ object AppRoutes {
     const val SETTINGS = "settings"
     const val MY_HOUSE = "my_house"
     const val HELP = "help"
+    const val GRAMIN_SETTINGS = "gramin_settings"
+    const val MARKET = "market"
+    const val CROP_SUGGESTION = "crop_suggestion"
+    const val WATER_MANAGEMENT = "water_management"
+    const val VENDORS = "vendors"
 
 }
 
@@ -102,7 +104,8 @@ fun AppNavigation() {
                 onHelpClick = { navController.navigate(AppRoutes.HELP) },
                 onProfileClick = { navController.navigate(AppRoutes.PROFILE) },
                 onMyPropertiesClick = { navController.navigate(AppRoutes.MY_PROPERTIES) },
-                onMyHouseClick = { navController.navigate(AppRoutes.MY_HOUSE) }
+                onMyHouseClick = { navController.navigate(AppRoutes.MY_HOUSE) },
+                onVendorClick = { navController.navigate(AppRoutes.VENDORS) }
             )
         }
         composable(AppRoutes.ASSESS) {
@@ -137,6 +140,15 @@ fun AppNavigation() {
         }
         composable(AppRoutes.MY_HOUSE) {
             MyHouseScreen()
+        }
+
+        composable("gramin_settings") {
+            GraminSettingsScreen(
+                onNavigateUp = { navController.navigateUp() }
+            )
+        }
+        composable(AppRoutes.VENDORS) {
+            VendorsScreen(onBackClick = { navController.popBackStack() })
         }
     }
 }
