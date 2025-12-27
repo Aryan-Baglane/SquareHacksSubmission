@@ -35,7 +35,7 @@ interface MarketApi {
 // 2. Singleton Object
 object RetrofitInstance {
     // IP 10.0.2.2 connects to your laptop's localhost from Emulator
-    private const val BASE_URL = "http://10.158.240.114:8080/"
+    private const val BASE_URL = "http://10.158.240.174:8080/"
 
     val api: MarketApi by lazy {
         Retrofit.Builder()

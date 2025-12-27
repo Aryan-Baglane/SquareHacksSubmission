@@ -24,7 +24,7 @@ interface CropApiService {
 // 2. Create the Singleton Client
 object RetrofitClient {
     // ⚠️ REPLACE WITH YOUR ACTUAL IP
-    private const val BASE_URL = "http://10.158.240.114:8000/"
+    private const val BASE_URL = "http://10.158.240.174:8000/"
 
     // 1. Create a custom OkHttpClient with increased timeouts
     private val okHttpClient = OkHttpClient.Builder()

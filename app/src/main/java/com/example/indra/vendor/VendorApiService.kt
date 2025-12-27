@@ -17,7 +17,7 @@ interface VendorApiService {
 }
 
 object VendorRetrofitClient {
-    private const val BASE_URL = "http://10.158.240.114:8000/"
+    private const val BASE_URL = "http://10.158.240.174:8000/"
 
     val apiService: VendorApiService by lazy {
         Retrofit.Builder()

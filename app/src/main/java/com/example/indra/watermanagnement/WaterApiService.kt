@@ -23,7 +23,7 @@ interface WaterApiService {
 
 // Singleton (Use your existing RetrofitClient if you have one)
 object WaterRetrofitClient {
-    private const val BASE_URL = "http://10.158.240.114:8000/"
+    private const val BASE_URL = "http://10.158.240.174:8000/"
 
     // AI/GIS requests need a longer timeout (60 seconds)
     private val okHttpClient = OkHttpClient.Builder()
