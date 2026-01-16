@@ -18,7 +18,7 @@ class GraminDashboardViewModel : ViewModel() {
     val dashboardState: LiveData<DashboardState> = _dashboardState
 
     private val db = DatabaseProvider.database()
-    private val weatherRepository = WeatherRepository(apiKey = "AIzaSyAxzIjZDp733qV9CSeA_ucDmbLzmuDQ35w")
+    private val weatherRepository = WeatherRepository(apiKey = "")
 
 
     fun loadDashboardData(uid: String, lat: Double?, lon: Double?, lang: String) {
