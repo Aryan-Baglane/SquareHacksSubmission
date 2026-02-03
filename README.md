@@ -56,13 +56,13 @@ Built with a focus on scalability and modern best practices, INDRA leverages the
 
 ## 📸 App Preview
 
-| Onboarding | Dashboard | Map Intelligence |
-| :---: | :---: | :---: |
-| ![Onboarding](<img width="524" height="1114" alt="image" src="https://github.com/user-attachments/assets/4de75f5e-24e0-4ab5-ba48-1fba87a87bd0" />
-) | ![Dashboard](<img width="524" height="1114" alt="image" src="https://github.com/user-attachments/assets/c35c53e6-7871-4b26-b288-9763796bd9b1" />
-) | ![Market Price Tracker](<img width="524" height="1114" alt="image" src="https://github.com/user-attachments/assets/94590e66-b2f7-4426-a2e6-41248b839986" />
-) | ![Crop Suggestion](<img width="524" height="1114" alt="image" src="<img width="524" height="1114" alt="image" src="https://github.com/user-attachments/assets/3114600a-1da1-43cf-99a0-22393c919c50" />
-) |
+| INDRA DASHBOARD    | GRAMIN Dashboard    | Mandi Price    | Crop Suggestion |
+| :---: | :---: | :---: | :---: |
+| 
+<img src="https://github.com/user-attachments/assets/c35c53e6-7871-4b26-b288-9763796bd9b1" width="200"/> | 
+<img src="https://github.com/user-attachments/assets/4de75f5e-24e0-4ab5-ba48-1fba87a87bd0" width="200"/> |
+<img src="https://github.com/user-attachments/assets/94590e66-b2f7-4426-a2e6-41248b839986" width="200"/> | 
+<img src="https://github.com/user-attachments/assets/3114600a-1da1-43cf-99a0-22393c919c50" width="200"/> |
 
 ---
 
@@ -79,4 +79,5 @@ Built with a focus on scalability and modern best practices, INDRA leverages the
    ```bash
    git clone [https://github.com/your-username/INDRA-APP.git](https://github.com/your-username/INDRA-APP.git)
    cd INDRA-APP
+
 
